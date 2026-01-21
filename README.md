@@ -184,14 +184,14 @@ raglineage diff v1.0 v1.1
 
 | Feature | raglineage | LangChain | LlamaIndex |
 |---------|-----------|-----------|------------|
-| **Lineage Tracking** | ✅ First-class | ❌ Not built-in | ❌ Not built-in |
-| **Dataset Versioning** | ✅ Native | ❌ Manual | ❌ Manual |
-| **Incremental Updates** | ✅ Automatic | ❌ Full rebuild | ❌ Full rebuild |
-| **Answer Auditing** | ✅ Built-in | ❌ Manual | ❌ Manual |
-| **Transform Chain Tracking** | ✅ Every LN | ❌ Not tracked | ❌ Not tracked |
-| **Version Diffing** | ✅ Structured | ❌ Not available | ❌ Not available |
-| **Graph Relationships** | ✅ DAG-based | ⚠️ Optional | ⚠️ Optional |
-| **Source Provenance** | ✅ Complete | ⚠️ Basic | ⚠️ Basic |
+| **Lineage Tracking** | First-class | Not built-in | Not built-in |
+| **Dataset Versioning** | Native | Manual | Manual |
+| **Incremental Updates** | Automatic | Full rebuild | Full rebuild |
+| **Answer Auditing** | Built-in | Manual | Manual |
+| **Transform Chain Tracking** | Every LN | Not tracked | Not tracked |
+| **Version Diffing** | Structured | Not available | Not available |
+| **Graph Relationships** | DAG-based | Optional | Optional |
+| **Source Provenance** | Complete | Basic | Basic |
 
 **Key Difference**: raglineage treats lineage as a core requirement, not an afterthought. Every operation preserves and tracks provenance.
 
@@ -231,29 +231,6 @@ Every answer includes:
   - Version consistency check
   - Staleness detection
   - Transform risk flags
-
-## Project Structure
-
-```
-raglineage/
-  ├── raglineage/
-  │   ├── __init__.py
-  │   ├── api.py              # High-level API
-  │   ├── config.py           # Configuration
-  │   ├── schemas/            # Pydantic models
-  │   ├── ingest/             # Data ingestion
-  │   ├── transform/          # Transformations
-  │   ├── lineage/            # Graph & versioning
-  │   ├── embedding/          # Embedding backends
-  │   ├── store/              # Vector stores
-  │   ├── retrieval/          # Retrieval logic
-  │   ├── audit/              # Auditing
-  │   ├── cli/                # CLI interface
-  │   └── utils/              # Utilities
-  ├── tests/                  # Test suite
-  ├── examples/               # Example datasets
-  └── pyproject.toml          # Package config
-```
 
 ## Requirements
 

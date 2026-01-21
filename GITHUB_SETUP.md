@@ -7,7 +7,7 @@
 1. Go to https://github.com/new
 2. Repository name: `raglineage`
 3. Description: `Lineage-aware RAG engine for auditable, reproducible, versioned retrieval and answers`
-4. Visibility: **Public** ✅
+4. Visibility: **Public**
 5. **DO NOT** check any boxes (README, .gitignore, license) - we already have them
 6. Click "Create repository"
 
@@ -28,9 +28,9 @@ git push -u origin main
 1. Go to repository Settings → General
 2. Scroll to "Features"
 3. Enable:
-   - ✅ Issues
-   - ✅ Discussions
-   - ✅ Wiki (optional)
+   - Issues
+   - Discussions
+   - Wiki (optional)
 
 ### Step 4: Add Repository Topics
 
@@ -50,11 +50,11 @@ audit-trail, version-control, semantic-search
 4. Description:
 
 ```markdown
-## 🎉 Initial Release: raglineage v0.1.0
+## Initial Release: raglineage v0.1.0
 
 The first lineage-aware RAG engine with complete provenance tracking.
 
-### ✨ Features
+### Features
 
 - **Complete Lineage Tracking**: Every retrievable chunk tracks source, transforms, version, and hash
 - **Dataset Versioning**: Track changes with file-level diffing
@@ -65,18 +65,18 @@ The first lineage-aware RAG engine with complete provenance tracking.
 - **CLI Interface**: Easy-to-use command-line tools
 - **Production Ready**: Persistent storage, error handling, logging
 
-### 📦 Installation
+### Installation
 
 ```bash
 pip install raglineage
 ```
 
-### 📚 Documentation
+### Documentation
 
 - [README](https://github.com/PranavMotarwar/raglineage#readme)
 - [Quickstart Guide](https://github.com/PranavMotarwar/raglineage#quickstart)
 
-### 🔗 Links
+### Links
 
 - PyPI: https://pypi.org/project/raglineage/
 - Documentation: https://github.com/PranavMotarwar/raglineage
@@ -110,7 +110,7 @@ The README already includes PyPI badges. After pushing, verify they work.
 
 ## Next Steps
 
-1. Share on social media (see PROMOTION.md)
+1. Share on social media
 2. Submit to awesome lists
 3. Post on Reddit/Hacker News
 4. Write blog post
