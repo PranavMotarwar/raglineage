@@ -37,6 +37,18 @@ ENV/
 *.faiss
 *.faiss_mapping.json
 
+# Internal scripts and documentation (not for public)
+deploy_to_pypi.sh
+push_to_github.sh
+setup_github.sh
+upload_to_pypi.sh
+create_and_push.sh
+quick_push.sh
+verify_installation.py
+UPLOAD_INSTRUCTIONS.md
+DEPLOY.md
+GITHUB_SETUP.md
+
 # Testing
 .pytest_cache/
 .coverage
