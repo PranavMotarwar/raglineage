@@ -7,8 +7,6 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 [![PyPI downloads](https://img.shields.io/pypi/dm/raglineage.svg)](https://pypi.org/project/raglineage/)
 
-## The Unique Idea
-
 Most RAG tools store text chunks and embeddings. They lose provenance and cannot explain answer drift.
 
 **raglineage** treats RAG as a data lineage and provenance problem, not just vector search. Every retrievable unit is a **Lineage Node (LN)** with:
