@@ -1,6 +1,6 @@
 """Audit schemas for answer lineage and audit reports."""
 
-from typing import A, Optionalny, Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
