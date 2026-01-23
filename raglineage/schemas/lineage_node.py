@@ -1,7 +1,9 @@
 """Lineage Node schema - the core data structure for lineage tracking."""
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Any, Literal, Union
+from typing import Any, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -11,8 +13,8 @@ class FileSource(BaseModel):
 
     type: Literal["file"] = "file"
     uri: str = Field(..., description="File path or URI")
-    line_start: int | None = Field(None, description="Starting line number")
-    line_end: int | None = Field(None, description="Ending line number")
+    line_start: Optional[int] = Field(None, description="Starting line number")
+    line_end: Optional[int] = Field(None, description="Ending line number")
 
 
 class PDFSource(BaseModel):
@@ -21,7 +23,7 @@ class PDFSource(BaseModel):
     type: Literal["pdf"] = "pdf"
     uri: str = Field(..., description="PDF file path or URI")
     page: int = Field(..., description="Page number")
-    section: str | None = Field(None, description="Section name or identifier")
+    section: Optional[str] = Field(None, description="Section name or identifier")
 
 
 class TabularSource(BaseModel):
@@ -30,7 +32,7 @@ class TabularSource(BaseModel):
     type: Literal["tabular"] = "tabular"
     uri: str = Field(..., description="Table file path or URI")
     row: int = Field(..., description="Row number (0-indexed)")
-    column: str | None = Field(None, description="Column name")
+    column: Optional[str] = Field(None, description="Column name")
 
 
 class APISource(BaseModel):
@@ -38,8 +40,8 @@ class APISource(BaseModel):
 
     type: Literal["api"] = "api"
     uri: str = Field(..., description="API endpoint URL")
-    request_id: str | None = Field(None, description="Request identifier")
-    timestamp: str | None = Field(None, description="Request timestamp")
+    request_id: Optional[str] = Field(None, description="Request identifier")
+    timestamp: Optional[str] = Field(None, description="Request timestamp")
 
 
 SourceRef = Union[FileSource, PDFSource, TabularSource, APISource]
@@ -71,7 +73,7 @@ class LineageNode(BaseModel):
     created_at: datetime = Field(
         default_factory=datetime.utcnow, description="Creation timestamp"
     )
-    updated_at: datetime | None = Field(None, description="Last update timestamp")
+    updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
     metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )

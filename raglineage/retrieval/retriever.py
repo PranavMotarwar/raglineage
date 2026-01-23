@@ -1,6 +1,6 @@
 """Retriever for querying with graph expansion."""
 
-from typing import Any
+from typing import A, Optionalny
 
 import numpy as np
 
@@ -42,7 +42,7 @@ class Retriever:
         self,
         query: str,
         k: int = 5,
-        filters: FilterConfig | None = None,
+        filters: FilterConfig Optional[ = None,
         graph_depth: int = 0,
     ) -> list[tuple[str, float]]:
         """

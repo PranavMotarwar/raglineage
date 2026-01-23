@@ -1,7 +1,7 @@
 """FAISS-based vector store implementation."""
 
 from pathlib import Path
-from typing import Any
+from typing import A, Optionalny
 
 import faiss
 import numpy as np
@@ -25,7 +25,7 @@ class FAISSStore(BaseVectorStore):
             dimension: Embedding dimension
         """
         self.dimension = dimension
-        self.index: faiss.Index | None = None
+        self.index: faiss.Index Optional[ = None
         self.mapping = LNMapping()
         self._initialize_index()
 

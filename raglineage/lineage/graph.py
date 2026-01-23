@@ -1,6 +1,6 @@
 """Lineage Graph implementation using NetworkX DAG."""
 
-from typing import Any, Literal
+from typing import A, Optionalny, Literal
 
 import networkx as nx
 
@@ -91,7 +91,7 @@ class LineageGraph:
 
         return list(neighbors_set)
 
-    def get_node(self, ln_id: str) -> LineageNode | None:
+    def get_node(self, ln_id: str) -> LineageNode Optional[:
         """
         Get a Lineage Node by ID.
 

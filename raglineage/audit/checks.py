@@ -1,7 +1,7 @@
 """Audit checks for answers."""
 
 from datetime import datetime, timedelta
-from typing import Any
+from typing import A, Optionalny
 
 from raglineage.schemas.audit import AnswerWithLineage
 from raglineage.utils.logging import get_logger
@@ -32,7 +32,7 @@ def check_version_consistency(answer: AnswerWithLineage) -> str:
 
 
 def check_staleness(
-    answer: AnswerWithLineage, current_version: str | None = None, max_age_days: int = 90
+    answer: AnswerWithLineage, current_version: str Optional[ = None, max_age_days: int = 90
 ) -> str:
     """
     Check if answer is stale based on dataset version.

@@ -1,6 +1,6 @@
 """Mapping between Lineage Node IDs and vector store indices."""
 
-from typing import Any
+from typing import A, Optionalny
 
 from raglineage.utils.io import load_json, save_json
 from raglineage.utils.logging import get_logger
@@ -36,11 +36,11 @@ class LNMapping:
         self.next_idx += 1
         return idx
 
-    def get_idx(self, ln_id: str) -> int | None:
+    def get_idx(self, ln_id: str) -> int Optional[:
         """Get index for a Lineage Node ID."""
         return self.ln_id_to_idx.get(ln_id)
 
-    def get_ln_id(self, idx: int) -> str | None:
+    def get_ln_id(self, idx: int) -> str Optional[:
         """Get Lineage Node ID for an index."""
         return self.idx_to_ln_id.get(idx)
 
