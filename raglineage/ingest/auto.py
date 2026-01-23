@@ -28,12 +28,12 @@ class AutoIngestor(BaseIngestor):
             FileIngestor(dataset_version),
         ]
 
-    def can_ingest(self, source: Path | str) -> bool:
+    def can_ingest(self, source: Union[Path, str]) -> bool:
         """Check if any ingestor can handle the source."""
         source = Path(source)
         return source.exists() and any(ingestor.can_ingest(source) for ingestor in self.ingestors)
 
-    def ingest(self, source: Path | str) -> Iterator[LineageNode]:
+    def ingest(self, source: Union[Path, str]) -> Iterator[LineageNode]:
         """Auto-detect and use appropriate ingestor."""
         source = Path(source)
         if not source.exists():

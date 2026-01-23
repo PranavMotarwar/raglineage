@@ -11,7 +11,7 @@ class BaseIngestor(ABC):
     """Base interface for data ingestion."""
 
     @abstractmethod
-    def ingest(self, source: Path | str) -> Iterator[LineageNode]:
+    def ingest(self, source: Union[Path, str]) -> Iterator[LineageNode]:
         """
         Ingest data from source and yield Lineage Nodes.
 
@@ -24,7 +24,7 @@ class BaseIngestor(ABC):
         pass
 
     @abstractmethod
-    def can_ingest(self, source: Path | str) -> bool:
+    def can_ingest(self, source: Union[Path, str]) -> bool:
         """
         Check if this ingestor can handle the source.
 
