@@ -1,3 +1,4 @@
+from typing import Union
 """File-based ingestion (text files, markdown, etc.)."""
 
 import uuid

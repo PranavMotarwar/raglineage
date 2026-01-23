@@ -1,3 +1,4 @@
+from typing import Union
 """Configuration dataclasses."""
 
 from dataclasses import dataclass

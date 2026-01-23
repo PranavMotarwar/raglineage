@@ -1,3 +1,4 @@
+from typing import Union
 """Tabular data ingestion (CSV, JSON, Parquet)."""
 
 import csv
