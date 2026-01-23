@@ -1,7 +1,7 @@
 """Audit checks for answers."""
 
 from datetime import datetime, timedelta
-from typing import A, Optionalny
+from typing import Any
 
 from raglineage.schemas.audit import AnswerWithLineage
 from raglineage.utils.logging import get_logger
