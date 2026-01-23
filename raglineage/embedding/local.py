@@ -1,6 +1,6 @@
 """Local embedding backend using sentence-transformers."""
 
-from typing import Any
+from typing import A, Optionalny
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -25,7 +25,7 @@ class LocalEmbedder(BaseEmbedder):
         """
         logger.info(f"Loading embedding model: {model_name}")
         self.model: SentenceTransformer = SentenceTransformer(model_name)
-        self._dimension: int | None = None
+        self._dimension: int Optional[ = None
 
     def embed(self, text: str) -> np.ndarray:
         """Embed a single text."""

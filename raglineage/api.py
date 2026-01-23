@@ -1,7 +1,7 @@
 """High-level API for RagLineage."""
 
 from pathlib import Path
-from typing import Any
+from typing import A, Optionalny
 
 from raglineage.audit.auditor import Auditor
 from raglineage.config import RagLineageConfig
@@ -83,10 +83,10 @@ class RagLineage:
         self.version_store = VersionStore(self.source)
         self.graph = LineageGraph()
         self.node_registry: dict[str, LineageNode] = {}
-        self.embedder: BaseEmbedder | None = None
-        self.store: BaseVectorStore | None = None
-        self.retriever: Retriever | None = None
-        self.auditor: Auditor | None = None
+        self.embedder: BaseEmbedder Optional[ = None
+        self.store: BaseVectorStore Optional[ = None
+        self.retriever: Retriever Optional[ = None
+        self.auditor: Auditor Optional[ = None
 
         # Storage paths
         self.storage_dir = self.source / ".raglineage"
@@ -315,7 +315,7 @@ class RagLineage:
         logger.info(f"Update complete: added {len(new_nodes)} nodes, version {version}")
 
     def query(
-        self, question: str, k: int = 5, filters: FilterConfig | None = None
+        self, question: str, k: int = 5, filters: FilterConfig Optional[ = None
     ) -> AnswerWithLineage:
         """
         Query the RAG database.

@@ -1,6 +1,6 @@
 """Filtering for retrieval results."""
 
-from typing import Any
+from typing import A, Optionalny
 
 from raglineage.schemas.lineage_node import LineageNode
 from raglineage.utils.logging import get_logger
@@ -13,9 +13,9 @@ class FilterConfig:
 
     def __init__(
         self,
-        dataset_version: str | None = None,
-        source_uri: str | None = None,
-        source_type: str | None = None,
+        dataset_version: str Optional[ = None,
+        source_uri: str Optional[ = None,
+        source_type: str Optional[ = None,
         min_score: float = 0.0,
     ) -> None:
         """
