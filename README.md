@@ -161,11 +161,11 @@ report = rag.audit(ans)
 print(report.model_dump_json(indent=2))
 ```
 
-### Comprehensive Example
+### Examples
 
-For a complete demonstration of all features, see:
-- `examples/comprehensive_example/comprehensive_example.py` - Shows all functionalities
-- `examples/basic_usage/example.py` - Minimal getting started example
+Check out the examples directory:
+- `examples/example/example.py` - Full walkthrough of all features
+- `examples/basic_usage/example.py` - Quick start example
 
 ### CLI Usage
 
