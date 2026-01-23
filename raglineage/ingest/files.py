@@ -27,12 +27,12 @@ class FileIngestor(BaseIngestor):
         """
         self.dataset_version = dataset_version
 
-    def can_ingest(self, source: Path | str) -> bool:
+    def can_ingest(self, source: Union[Path, str]) -> bool:
         """Check if source is a text file."""
         source = Path(source)
         return source.is_file() and source.suffix.lower() in TEXT_EXTENSIONS
 
-    def ingest(self, source: Path | str) -> Iterator[LineageNode]:
+    def ingest(self, source: Union[Path, str]) -> Iterator[LineageNode]:
         """Ingest text file and yield Lineage Nodes."""
         source = Path(source)
         if not self.can_ingest(source):

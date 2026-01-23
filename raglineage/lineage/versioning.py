@@ -18,7 +18,7 @@ MANIFEST_FILE = "manifest.json"
 class VersionStore:
     """Manages dataset versions and manifests."""
 
-    def __init__(self, root_path: Path | str) -> None:
+    def __init__(self, root_path: Union[Path, str]) -> None:
         """
         Initialize version store.
 

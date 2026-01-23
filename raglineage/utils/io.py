@@ -9,7 +9,7 @@ from raglineage.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-def ensure_dir(path: Path | str) -> Path:
+def ensure_dir(path: Union[Path, str]) -> Path:
     """
     Ensure directory exists, creating if necessary.
 
@@ -24,7 +24,7 @@ def ensure_dir(path: Path | str) -> Path:
     return path
 
 
-def load_json(file_path: Path | str) -> Any:
+def load_json(file_path: Union[Path, str]) -> Any:
     """
     Load JSON from file.
 
@@ -42,7 +42,7 @@ def load_json(file_path: Path | str) -> Any:
         return json.load(f)
 
 
-def save_json(data: Any, file_path: Path | str, indent: int = 2) -> None:
+def save_json(data: Any, file_path: Union[Path, str], indent: int = 2) -> None:
     """
     Save data as JSON to file.
 

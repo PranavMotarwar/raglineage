@@ -2,6 +2,7 @@
 
 import hashlib
 from pathlib import Path
+from typing import Union
 
 
 def compute_content_hash(content: str) -> str:
@@ -18,7 +19,7 @@ def compute_content_hash(content: str) -> str:
     return f"sha256:{hash_obj.hexdigest()}"
 
 
-def compute_file_hash(file_path: Path | str) -> str:
+def compute_file_hash(file_path: Union[Path, str]) -> str:
     """
     Compute SHA-256 hash of file contents.
 

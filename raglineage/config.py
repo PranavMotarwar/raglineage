@@ -9,7 +9,7 @@ from typing import Literal
 class RagLineageConfig:
     """Configuration for RagLineage."""
 
-    source: Path | str
+    source: Union[Path, str]
     store_backend: Literal["faiss"] = "faiss"
     embed_backend: Literal["local", "openai"] = "local"
     embed_model: str = "all-MiniLM-L6-v2"
