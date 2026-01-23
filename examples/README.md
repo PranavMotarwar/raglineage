@@ -1,75 +1,49 @@
 # raglineage Examples
 
-This directory contains examples demonstrating raglineage functionality.
+Examples showing how to use raglineage.
 
 ## Examples
 
 ### Basic Usage (`basic_usage/`)
-A minimal example showing core functionality:
-- Building a RAG database
+A quick start example that shows the essentials:
+- Building a database
 - Querying with lineage
-- Answer auditing
+- Auditing answers
 
 **Run:**
 ```bash
 python examples/basic_usage/example.py
 ```
 
-### Comprehensive Example (`comprehensive_example/`)
-A complete demonstration of all raglineage features:
-- Initialization and configuration
+### Full Example (`example/`)
+A complete walkthrough of all features:
 - Building with versioning
-- Querying with lineage tracking
+- Querying and lineage tracking
 - Answer auditing
 - Incremental updates
-- Version diffing
-- Filtered queries
-- Graph relationships
-- Exporting lineage data
-- Dataset versioning
+- Version comparison
+- Filtering
+- Graph exploration
+- Exporting data
 
 **Run:**
 ```bash
-python examples/comprehensive_example/comprehensive_example.py
+python examples/example/example.py
 ```
 
 ## Sample Data
 
-The `data/` directory contains sample files used by the examples:
-- `sample.txt` - Sample text file with policies
-- `products.csv` - Sample CSV file with product data
+The `data/` directory has sample files the examples use:
+- `sample.txt` - Sample text with policies
+- `products.csv` - Sample product data
 
-## Key Features Demonstrated
+## What raglineage does
 
-### Lineage Tracking
-Every retrievable chunk tracks:
-- Exact source (file, page, row, URL)
-- Full transform chain
-- Dataset version
-- Content hash
-- Timestamps
+raglineage tracks the complete lineage of every chunk in your RAG system. When you query, you get results with full provenance - you know exactly where each piece of information came from, what transforms were applied, and which version of your data it's from.
 
-### Dataset Versioning
-- Track changes between versions
-- File-level change detection
-- Incremental updates
-- Version comparison
-
-### Answer Auditing
-- Staleness detection
-- Version consistency checks
-- Transform risk flags
-- Complete provenance reconstruction
-
-### Graph Relationships
-- DAG linking related chunks
-- Graph-walk retrieval
-- Relationship exploration
-- Export capabilities
-
-## Next Steps
-
-1. Try the basic example to get started
-2. Explore the comprehensive example for all features
-3. Modify the examples for your use case
-4. Check the main README for API documentation
+This makes it possible to:
+- Audit answers for quality and consistency
+- Track changes between dataset versions
+- Update incrementally (only reprocess what changed)
+- Understand why answers changed when data updates
+- Maintain compliance trails
