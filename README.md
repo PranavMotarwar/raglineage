@@ -14,7 +14,7 @@ Most RAG tools store text chunks and embeddings. They lose provenance and cannot
 **raglineage** treats RAG as a data lineage and provenance problem, not just vector search. Every retrievable unit is a **Lineage Node (LN)** with:
 
 - Immutable ID and dataset version
-- Precise source reference (file path, page, row, URL, etc.)
+- Precise source reference (file path, page, row, URL)
 - Full transform chain (ordered list of transforms applied)
 - Content hash for integrity
 - Timestamps for auditing
@@ -27,7 +27,7 @@ The system maintains a **Lineage Graph (DAG)** linking nodes through structural 
 - Version consistency checks
 - Staleness detection
 
-This is **not** a LangChain/LlamaIndex wrapper—it's a first-class lineage system.
+This is **not** a LangChain/LlamaIndex wrapper, rather we wanted a first-class lineage system.
 
 ## Architecture
 
@@ -326,15 +326,6 @@ Every answer includes:
 # Clone repository
 git clone https://github.com/PranavMotarwar/raglineage.git
 cd raglineage
-
-# Install in development mode
-pip install -e ".[dev]"
-
-# Run tests
-pytest
-
-# Run linting
-ruff check .
 ```
 
 ## Contributing
