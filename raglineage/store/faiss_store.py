@@ -1,7 +1,7 @@
 """FAISS-based vector store implementation."""
 
 from pathlib import Path
-from typing import A, Optionalny
+from typing import Optional
 
 import faiss
 import numpy as np

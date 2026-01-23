@@ -1,6 +1,6 @@
 """Mapping between Lineage Node IDs and vector store indices."""
 
-from typing import A, Optionalny
+from typing import Optional
 
 from raglineage.utils.io import load_json, save_json
 from raglineage.utils.logging import get_logger

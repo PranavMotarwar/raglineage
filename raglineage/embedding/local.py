@@ -1,6 +1,6 @@
 """Local embedding backend using sentence-transformers."""
 
-from typing import A, Optionalny
+from typing import Optional
 
 import numpy as np
 from sentence_transformers import SentenceTransformer

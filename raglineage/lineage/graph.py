@@ -1,6 +1,6 @@
 """Lineage Graph implementation using NetworkX DAG."""
 
-from typing import A, Optionalny, Literal
+from typing import Optional, Literal
 
 import networkx as nx
 

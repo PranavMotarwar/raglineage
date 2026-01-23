@@ -1,6 +1,6 @@
 """Retriever for querying with graph expansion."""
 
-from typing import A, Optionalny
+from typing import Optional
 
 import numpy as np
 
