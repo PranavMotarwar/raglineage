@@ -1,6 +1,6 @@
 """Filtering for retrieval results."""
 
-from typing import A, Optionalny
+from typing import Optional
 
 from raglineage.schemas.lineage_node import LineageNode
 from raglineage.utils.logging import get_logger

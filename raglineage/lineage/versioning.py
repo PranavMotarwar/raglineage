@@ -3,7 +3,7 @@ from typing import Union
 
 from datetime import datetime
 from pathlib import Path
-from typing import A, Optionalny
+from typing import Optional
 
 from raglineage.schemas.dataset import DatasetManifest, DatasetVersion, FileEntry
 from raglineage.utils.hashing import compute_file_hash

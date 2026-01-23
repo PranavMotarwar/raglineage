@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "raglineage"
-version = "0.2.4"
+version = "0.2.5"
 description = "Lineage-aware RAG engine for auditable, reproducible, versioned retrieval and answers"
 readme = "README.md"
 requires-python = ">=3.10"

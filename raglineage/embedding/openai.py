@@ -1,6 +1,6 @@
 """OpenAI embedding backend (optional, requires openai package)."""
 
-from typing import A, Optionalny
+from typing import Optional
 
 import numpy as np
 
