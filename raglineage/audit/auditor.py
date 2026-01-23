@@ -1,5 +1,7 @@
 """Auditor for generating audit reports."""
 
+from typing import Optional
+
 from raglineage.audit.checks import (
     check_staleness,
     check_transform_risks,
@@ -14,7 +16,7 @@ logger = get_logger(__name__)
 class Auditor:
     """Auditor for answer validation and reporting."""
 
-    def __init__(self, current_version: Optional[str] = None) -> None:
+    def __init__(self, current_version: str | None = None) -> None:
         """
         Initialize auditor.
 
