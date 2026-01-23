@@ -1,3 +1,4 @@
+from typing import Union
 """Auto-detecting ingestor that routes to appropriate ingestor."""
 
 from pathlib import Path

@@ -1,3 +1,4 @@
+from typing import Union
 """Dataset versioning and manifest management."""
 
 from datetime import datetime

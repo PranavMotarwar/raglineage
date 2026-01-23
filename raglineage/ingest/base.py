@@ -1,3 +1,4 @@
+from typing import Union
 """Base ingestor interface."""
 
 from abc import ABC, abstractmethod

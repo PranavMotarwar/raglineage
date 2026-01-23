@@ -1,3 +1,4 @@
+from typing import Union
 """High-level API for RagLineage."""
 
 from pathlib import Path
