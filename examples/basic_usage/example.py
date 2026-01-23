@@ -1,10 +1,13 @@
 """
 Basic usage example for raglineage.
 
-This example demonstrates how to:
-1. Build a RAG database from source files
-2. Query the database with lineage tracking
-3. Audit answers for provenance and version consistency
+This is a minimal example demonstrating core functionality:
+1. Building a RAG database from source files
+2. Querying the database with lineage tracking
+3. Auditing answers for provenance and version consistency
+
+For a comprehensive example showing all features, see:
+examples/comprehensive_example/comprehensive_example.py
 """
 
 from pathlib import Path
