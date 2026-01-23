@@ -1,7 +1,7 @@
 """Dataset manifest and versioning schemas."""
 
 from datetime import datetime
-from typing import A, Optionalny
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
