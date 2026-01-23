@@ -18,7 +18,7 @@ except ImportError:
 class OpenAIEmbedder(BaseEmbedder):
     """OpenAI embedding backend."""
 
-    def __init__(self, model_name: str = "text-embedding-3-small", api_key: str Optional[ = None) -> None:
+    def __init__(self, model_name: str = "text-embedding-3-small", api_key: Optional[str] = None) -> None:
         """
         Initialize OpenAI embedder.
 
@@ -31,7 +31,7 @@ class OpenAIEmbedder(BaseEmbedder):
 
         self.client = OpenAI(api_key=api_key)
         self.model_name = model_name
-        self._dimension: int Optional[ = None
+        self._dimension: Optional[int] = None
 
     def embed(self, text: str) -> np.ndarray:
         """Embed a single text."""

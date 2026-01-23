@@ -25,7 +25,7 @@ class FAISSStore(BaseVectorStore):
             dimension: Embedding dimension
         """
         self.dimension = dimension
-        self.index: faiss.Index Optional[ = None
+        self.index: Optional[faiss.Index] = None
         self.mapping = LNMapping()
         self._initialize_index()
 

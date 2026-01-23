@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 class Auditor:
     """Auditor for answer validation and reporting."""
 
-    def __init__(self, current_version: str Optional[ = None) -> None:
+    def __init__(self, current_version: Optional[str] = None) -> None:
         """
         Initialize auditor.
 

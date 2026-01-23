@@ -91,7 +91,7 @@ class LineageGraph:
 
         return list(neighbors_set)
 
-    def get_node(self, ln_id: str) -> LineageNode Optional[:
+    def get_node(self, ln_id: str) -> Optional[LineageNode]:
         """
         Get a Lineage Node by ID.
 

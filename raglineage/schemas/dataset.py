@@ -34,7 +34,7 @@ class DatasetManifest(BaseModel):
     """
 
     dataset_name: str = Field(..., description="Name of the dataset")
-    current_version: str Optional[ = Field(None, description="Current active version")
+    current_version: Optional[str] = Field(None, description="Current active version")
     versions: list[DatasetVersion] = Field(
         default_factory=list, description="List of all versions"
     )
@@ -48,7 +48,7 @@ class DatasetManifest(BaseModel):
         default_factory=dict, description="Dataset-level metadata"
     )
 
-    def get_version(self, version: str) -> DatasetVersion Optional[:
+    def get_version(self, version: str) -> Optional[DatasetVersion]:
         """Get a specific version by tag."""
         for v in self.versions:
             if v.version == version:

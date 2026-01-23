@@ -25,7 +25,7 @@ class LocalEmbedder(BaseEmbedder):
         """
         logger.info(f"Loading embedding model: {model_name}")
         self.model: SentenceTransformer = SentenceTransformer(model_name)
-        self._dimension: int Optional[ = None
+        self._dimension: Optional[int] = None
 
     def embed(self, text: str) -> np.ndarray:
         """Embed a single text."""
