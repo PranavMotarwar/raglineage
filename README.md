@@ -5,6 +5,9 @@
 [![PyPI version](https://badge.fury.io/py/raglineage.svg)](https://badge.fury.io/py/raglineage)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
+[![PyPI downloads](https://img.shields.io/pypi/dm/raglineage.svg)](https://pypi.org/project/raglineage/)
+
+## The Unique Idea
 
 Most RAG tools store text chunks and embeddings. They lose provenance and cannot explain answer drift.
 
@@ -158,6 +161,12 @@ report = rag.audit(ans)
 print(report.model_dump_json(indent=2))
 ```
 
+### Comprehensive Example
+
+For a complete demonstration of all features, see:
+- `examples/comprehensive_example/comprehensive_example.py` - Shows all functionalities
+- `examples/basic_usage/example.py` - Minimal getting started example
+
 ### CLI Usage
 
 ```bash
@@ -228,6 +237,79 @@ Every answer includes:
   - Version consistency check
   - Staleness detection
   - Transform risk flags
+
+## Complete Feature Set
+
+### 1. Data Ingestion
+- **Auto-detection**: Automatically detects file types and routes to appropriate ingestor
+- **File Ingestion**: Text files (.txt, .md, .rst)
+- **Tabular Ingestion**: CSV, JSON files (row-by-row processing)
+- **Extensible**: Easy to add custom ingestors for PDFs, APIs, databases
+
+### 2. Transform Pipeline
+- **Chunking Strategies**:
+  - Simple chunking (character-based with overlap)
+  - Semantic chunking (sentence-aware with overlap)
+- **Deduplication**: Content hash-based duplicate detection
+- **Normalization**: Text cleanup and normalization (with aggressive mode)
+- **Transform Chain Tracking**: Every transform is recorded in the lineage
+
+### 3. Embedding Backends
+- **Local Embeddings**: sentence-transformers (default: all-MiniLM-L6-v2)
+- **OpenAI Embeddings**: Optional OpenAI API integration
+- **Extensible**: Easy to add custom embedding backends
+
+### 4. Vector Storage
+- **FAISS Store**: Efficient similarity search with L2 distance
+- **LN ID Mapping**: Bidirectional mapping between vector indices and Lineage Node IDs
+- **Persistence**: Stores index and mappings to disk
+- **Incremental Updates**: Add/update vectors without full rebuild
+
+### 5. Retrieval
+- **Top-K Retrieval**: Standard vector similarity search
+- **Graph-Walk Expansion**: Expand results using graph relationships
+- **Filtering**: Filter by version, source URI, source type, minimum score
+- **Configurable Depth**: Control graph walk depth for expansion
+
+### 6. Lineage Graph
+- **DAG Structure**: NetworkX-based directed acyclic graph
+- **Relationship Types**: adjacent, semantic, references, same_entity, derived, parent_child
+- **Graph Operations**:
+  - Add nodes and edges
+  - Get neighbors at specified depth
+  - Export/import as JSON
+  - Query node information
+
+### 7. Dataset Versioning
+- **Version Manifests**: Track all versions with file lists and hashes
+- **File Tracking**: SHA-256 hashes for change detection
+- **Version Comparison**: Diff between any two versions
+- **Current Version**: Track active version
+
+### 8. Incremental Updates
+- **Change Detection**: Automatically detects changed files using hashes
+- **Selective Processing**: Only processes added/modified files
+- **Efficient Rebuilds**: Recomputes embeddings only for changed content
+- **Graph Updates**: Incrementally updates graph relationships
+
+### 9. Answer Auditing
+- **Staleness Detection**: Checks if answer uses outdated data
+- **Version Consistency**: Verifies all sources are from same version
+- **Transform Risk Analysis**: Flags risky transforms (OCR, aggressive normalization, etc.)
+- **Complete Audit Reports**: JSON-serializable audit metadata
+
+### 10. CLI Interface
+- **raglineage init**: Initialize a new project
+- **raglineage build**: Build database from source
+- **raglineage update**: Incrementally update database
+- **raglineage query**: Query with lineage output
+- **raglineage diff**: Compare dataset versions
+
+### 11. Export and Integration
+- **JSON Export**: Export lineage graph, answers, audit reports as JSON
+- **Python API**: Full programmatic access to all features
+- **Type Hints**: Complete type annotations for IDE support
+- **Pydantic Models**: All data structures are Pydantic models for validation
 
 ## Requirements
 
