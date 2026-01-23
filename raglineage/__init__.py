@@ -2,5 +2,5 @@
 
 from raglineage.api import RagLineage
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __all__ = ["RagLineage"]
