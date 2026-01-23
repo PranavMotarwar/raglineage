@@ -13,9 +13,9 @@ class FilterConfig:
 
     def __init__(
         self,
-        dataset_version: str Optional[ = None,
-        source_uri: str Optional[ = None,
-        source_type: str Optional[ = None,
+        dataset_version: Optional[str] = None,
+        source_uri: Optional[str] = None,
+        source_type: Optional[str] = None,
         min_score: float = 0.0,
     ) -> None:
         """

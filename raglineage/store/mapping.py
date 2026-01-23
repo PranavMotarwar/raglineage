@@ -36,11 +36,11 @@ class LNMapping:
         self.next_idx += 1
         return idx
 
-    def get_idx(self, ln_id: str) -> int Optional[:
+    def get_idx(self, ln_id: str) -> Optional[int]:
         """Get index for a Lineage Node ID."""
         return self.ln_id_to_idx.get(ln_id)
 
-    def get_ln_id(self, idx: int) -> str Optional[:
+    def get_ln_id(self, idx: int) -> Optional[str]:
         """Get Lineage Node ID for an index."""
         return self.idx_to_ln_id.get(idx)
 

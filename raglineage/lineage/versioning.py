@@ -27,9 +27,9 @@ class VersionStore:
         """
         self.root_path = Path(root_path)
         self.manifest_path = self.root_path / MANIFEST_DIR / MANIFEST_FILE
-        self._manifest: DatasetManifest Optional[ = None
+        self._manifest: Optional[DatasetManifest] = None
 
-    def load_manifest(self) -> DatasetManifest Optional[:
+    def load_manifest(self) -> Optional[DatasetManifest]:
         """
         Load manifest from disk.
 
@@ -131,7 +131,7 @@ class VersionStore:
 
         return version_obj
 
-    def get_version(self, version: str) -> DatasetVersion Optional[:
+    def get_version(self, version: str) -> Optional[DatasetVersion]:
         """
         Get a specific version.
 
@@ -146,7 +146,7 @@ class VersionStore:
             return None
         return manifest.get_version(version)
 
-    def get_current_version(self) -> str Optional[:
+    def get_current_version(self) -> Optional[str]:
         """
         Get current version tag.
 

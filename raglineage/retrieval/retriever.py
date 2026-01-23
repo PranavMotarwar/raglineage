@@ -42,7 +42,7 @@ class Retriever:
         self,
         query: str,
         k: int = 5,
-        filters: FilterConfig Optional[ = None,
+        filters: Optional[FilterConfig] = None,
         graph_depth: int = 0,
     ) -> list[tuple[str, float]]:
         """
