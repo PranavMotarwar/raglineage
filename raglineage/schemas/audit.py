@@ -33,7 +33,7 @@ class AnswerWithLineage(BaseModel):
 class AuditReport(BaseModel):
     """Audit report for an answer."""
 
-    answer_id: str | None = Field(None, description="Answer identifier")
+    answer_id: Optional[str] = Field(None, description="Answer identifier")
     staleness_check: Literal["pass", "fail", "warning"] = Field(
         ..., description="Staleness check result"
     )
