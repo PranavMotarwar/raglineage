@@ -1,4 +1,3 @@
-from typing import Union
 """High-level API for RagLineage."""
 
 from pathlib import Path
@@ -37,7 +36,7 @@ class RagLineage:
 
     def __init__(
         self,
-        source: Union[Path, str],
+        source: Path | str,
         store_backend: str = "faiss",
         embed_backend: str = "local",
         embed_model: str = "all-MiniLM-L6-v2",
