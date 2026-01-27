@@ -32,7 +32,6 @@ Thank you for your interest in contributing to raglineage! This document provide
 - Write tests for all new features
 - Aim for high test coverage
 - Tests should be in `tests/` directory
-- Run tests with: `pytest`
 
 ## Pull Request Process
 
