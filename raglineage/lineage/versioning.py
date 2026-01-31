@@ -1,9 +1,8 @@
-from typing import Union
 """Dataset versioning and manifest management."""
 
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from raglineage.schemas.dataset import DatasetManifest, DatasetVersion, FileEntry
 from raglineage.utils.hashing import compute_file_hash
@@ -19,7 +18,7 @@ MANIFEST_FILE = "manifest.json"
 class VersionStore:
     """Manages dataset versions and manifests."""
 
-    def __init__(self, root_path: Union[Path, str]) -> None:
+    def __init__(self, root_path: Path | str) -> None:
         """
         Initialize version store.
 
@@ -28,9 +27,9 @@ class VersionStore:
         """
         self.root_path = Path(root_path)
         self.manifest_path = self.root_path / MANIFEST_DIR / MANIFEST_FILE
-        self._manifest: Optional[DatasetManifest] = None
+        self._manifest: DatasetManifest | None = None
 
-    def load_manifest(self) -> Optional[DatasetManifest]:
+    def load_manifest(self) -> DatasetManifest | None:
         """
         Load manifest from disk.
 
@@ -93,7 +92,7 @@ class VersionStore:
         return manifest
 
     def create_version(
-        self, version: str, files: list[Path], metadata: dict[str, Any] Optional[ = None
+        self, version: str, files: list[Path], metadata: Optional[dict[str, Any]] = None
     ) -> DatasetVersion:
         """
         Create a new dataset version.
@@ -132,7 +131,7 @@ class VersionStore:
 
         return version_obj
 
-    def get_version(self, version: str) -> Optional[DatasetVersion]:
+    def get_version(self, version: str) -> DatasetVersion | None:
         """
         Get a specific version.
 
@@ -147,7 +146,7 @@ class VersionStore:
             return None
         return manifest.get_version(version)
 
-    def get_current_version(self) -> Optional[str]:
+    def get_current_version(self) -> str | None:
         """
         Get current version tag.
 
