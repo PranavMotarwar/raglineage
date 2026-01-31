@@ -28,8 +28,6 @@ The system maintains a **Lineage Graph (DAG)** linking nodes through structural 
 - Version consistency checks
 - Staleness detection
 
-This is **not** a LangChain/LlamaIndex wrapper, rather we wanted a first-class lineage system.
-
 ## Architecture
 
 ```
