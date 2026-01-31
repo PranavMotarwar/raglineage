@@ -4,7 +4,7 @@
 
 [![PyPI version](https://badge.fury.io/py/raglineage.svg)](https://badge.fury.io/py/raglineage)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-orange.svg)](https://opensource.org/licenses/Apache-2.0)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/raglineage?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/raglineage)
 
 
