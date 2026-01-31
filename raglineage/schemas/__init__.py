@@ -3,6 +3,7 @@
 from raglineage.schemas.lineage_node import LineageNode, SourceRef
 from raglineage.schemas.audit import AnswerWithLineage, AuditReport, LineageEntry
 from raglineage.schemas.dataset import DatasetManifest, DatasetVersion, FileEntry
+from raglineage.schemas.stats import RagLineageStats
 
 __all__ = [
     "LineageNode",
@@ -13,4 +14,5 @@ __all__ = [
     "DatasetManifest",
     "DatasetVersion",
     "FileEntry",
+    "RagLineageStats",
 ]

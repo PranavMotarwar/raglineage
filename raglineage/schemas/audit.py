@@ -29,6 +29,32 @@ class AnswerWithLineage(BaseModel):
         default_factory=dict, description="Additional answer metadata"
     )
 
+    def to_markdown(self) -> str:
+        """
+        Export answer and lineage to Markdown for reports and sharing.
+
+        Returns:
+            Markdown string suitable for reports, docs, or exports
+        """
+        lines = [
+            f"## Question\n{self.question}",
+            "",
+            f"## Answer\n{self.answer}",
+            "",
+        ]
+        if self.lineage:
+            lines.append("## Lineage\n")
+            lines.append("| LN ID | Score | Version | Source |")
+            lines.append("|-------|-------|---------|--------|")
+            for entry in self.lineage:
+                full_uri = getattr(entry.source, "uri", str(entry.source))
+                source_uri = full_uri[:60] + ("..." if len(full_uri) > 60 else "")
+                lines.append(
+                    f"| {entry.ln_id[:16]}... | {entry.score:.3f} | "
+                    f"{entry.dataset_version} | {source_uri} |"
+                )
+        return "\n".join(lines)
+
 
 class AuditReport(BaseModel):
     """Audit report for an answer."""

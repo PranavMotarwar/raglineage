@@ -14,6 +14,7 @@ from raglineage.lineage.versioning import VersionStore
 from raglineage.retrieval.filters import FilterConfig
 from raglineage.retrieval.retriever import Retriever
 from raglineage.schemas.audit import AnswerWithLineage, LineageEntry
+from raglineage.schemas.stats import RagLineageStats
 from raglineage.schemas.lineage_node import LineageNode
 from raglineage.store.base import BaseVectorStore
 from raglineage.store.faiss_store import FAISSStore
@@ -381,6 +382,60 @@ class RagLineage:
             self.auditor = Auditor(current_version)
 
         return self.auditor.audit(answer)
+
+    def stats(self) -> RagLineageStats:
+        """
+        Get dataset statistics without loading the full store.
+
+        Returns:
+            RagLineageStats with node count, version info, and build status
+        """
+        storage_path = self.storage_dir
+        is_built = (storage_path / "faiss_index").exists()
+
+        node_count = 0
+        if is_built:
+            graph_data = load_json(storage_path / "graph.json")
+            if graph_data and "nodes" in graph_data:
+                node_count = len(graph_data["nodes"])
+
+        manifest = self.version_store.load_manifest()
+        current_version = None
+        source_files = 0
+        versions: list[str] = []
+
+        if manifest:
+            current_version = manifest.current_version
+            versions = [v.version for v in manifest.versions]
+            if current_version:
+                version_obj = manifest.get_version(current_version)
+                if version_obj:
+                    source_files = len(version_obj.files)
+
+        return RagLineageStats(
+            node_count=node_count,
+            current_version=current_version,
+            source_files=source_files,
+            versions=versions,
+            storage_path=str(storage_path),
+            is_built=is_built,
+        )
+
+    def batch_query(
+        self, questions: list[str], k: int = 5, filters: FilterConfig | None = None
+    ) -> list[AnswerWithLineage]:
+        """
+        Query multiple questions at once. Useful for batch processing.
+
+        Args:
+            questions: List of query questions
+            k: Number of results per question
+            filters: Optional filters
+
+        Returns:
+            List of AnswerWithLineage, one per question
+        """
+        return [self.query(q, k=k, filters=filters) for q in questions]
 
     def diff(self, version_from: str, version_to: str) -> VersionDiff:
         """

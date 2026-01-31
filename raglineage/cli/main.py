@@ -61,6 +61,7 @@ def query(
     source: str = typer.Option(..., "--source", "-s", help="Source directory"),
     k: int = typer.Option(5, "--k", help="Number of results"),
     version: str = typer.Option(None, "--version", help="Filter by dataset version"),
+    output: str = typer.Option("table", "--output", "-o", help="Output format: table or json"),
 ) -> None:
     """Query the RAG database."""
     rag = RagLineage(source=source)
@@ -70,6 +71,19 @@ def query(
         filters = FilterConfig(dataset_version=version)
 
     answer = rag.query(question, k=k, filters=filters)
+    report = rag.audit(answer)
+
+    if output == "json":
+        import json
+        out = {
+            "question": answer.question,
+            "answer": answer.answer,
+            "lineage": [e.model_dump(mode="json") for e in answer.lineage],
+            "audit": report.model_dump(mode="json"),
+        }
+        console.print(json.dumps(out, indent=2))
+        return
+
     console.print(f"\n[bold]Question:[/bold] {answer.question}")
     console.print(f"\n[bold]Answer:[/bold] {answer.answer}")
     console.print(f"\n[bold]Lineage:[/bold] {len(answer.lineage)} nodes")
@@ -83,22 +97,38 @@ def query(
         table.add_column("Source", style="magenta")
 
         for entry in answer.lineage:
+            uri = getattr(entry.source, "uri", str(entry.source))
             table.add_row(
                 entry.ln_id[:12] + "...",
                 f"{entry.score:.3f}",
                 entry.dataset_version,
-                entry.source.uri[:50] + "..." if len(entry.source.uri) > 50 else entry.source.uri,
+                uri[:50] + "..." if len(uri) > 50 else uri,
             )
 
         console.print(table)
 
-    # Audit
-    report = rag.audit(answer)
     console.print(f"\n[bold]Audit Report:[/bold]")
     console.print(f"  Staleness: {report.staleness_check}")
     console.print(f"  Version Consistency: {report.version_consistency}")
     if report.transform_risk_flags:
         console.print(f"  Risk Flags: {', '.join(report.transform_risk_flags)}")
+
+
+@app.command()
+def stats(
+    source: str = typer.Option(..., "--source", "-s", help="Source directory"),
+) -> None:
+    """Show dataset statistics (node count, versions, build status)."""
+    rag = RagLineage(source=source)
+    s = rag.stats()
+
+    console.print("\n[bold]raglineage Dataset Stats[/bold]")
+    console.print(f"  Built: {s.is_built}")
+    console.print(f"  Nodes: {s.node_count}")
+    console.print(f"  Current version: {s.current_version or 'N/A'}")
+    console.print(f"  Source files: {s.source_files}")
+    console.print(f"  All versions: {', '.join(s.versions) if s.versions else 'None'}")
+    console.print(f"  Storage: {s.storage_path}")
 
 
 @app.command()

@@ -7,6 +7,8 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 [![PyPI downloads](https://img.shields.io/pypi/dm/raglineage.svg)](https://pypi.org/project/raglineage/)
 
+> **v0.2.7**: `rag.stats()`, `rag.batch_query()`, `answer.to_markdown()`, `raglineage stats` CLI, `--output json` for query
+
 ## The Unique Idea
 
 Most RAG tools store text chunks and embeddings. They lose provenance and cannot explain answer drift.
@@ -159,6 +161,16 @@ print(ans.model_dump_json(indent=2))
 # Audit the answer
 report = rag.audit(ans)
 print(report.model_dump_json(indent=2))
+
+# Get dataset statistics
+stats = rag.stats()
+print(f"Nodes: {stats.node_count}, Version: {stats.current_version}")
+
+# Batch query multiple questions
+answers = rag.batch_query(["Question 1?", "Question 2?"], k=3)
+
+# Export answer to Markdown for reports
+print(ans.to_markdown())
 ```
 
 ### Examples
@@ -179,8 +191,12 @@ raglineage build --source ./data --version v1.0
 # Update incrementally
 raglineage update --source ./data --version v1.1 --changed-only
 
-# Query
+# Query (table or JSON output)
 raglineage query "What is the refund policy?" --k 5
+raglineage query "What is the refund policy?" --output json  # For piping, CI/CD
+
+# Show dataset statistics
+raglineage stats --source ./data
 
 # Diff versions
 raglineage diff v1.0 v1.1
@@ -302,11 +318,15 @@ Every answer includes:
 - **raglineage init**: Initialize a new project
 - **raglineage build**: Build database from source
 - **raglineage update**: Incrementally update database
-- **raglineage query**: Query with lineage output
+- **raglineage query**: Query with lineage output (supports `--output json` for CI/piping)
+- **raglineage stats**: Show dataset statistics (node count, versions, build status)
 - **raglineage diff**: Compare dataset versions
 
 ### 11. Export and Integration
 - **JSON Export**: Export lineage graph, answers, audit reports as JSON
+- **Markdown Export**: `answer.to_markdown()` for reports and sharing
+- **Batch Query**: `rag.batch_query(questions)` for processing multiple questions
+- **Dataset Stats**: `rag.stats()` for node count, versions, and build status
 - **Python API**: Full programmatic access to all features
 - **Type Hints**: Complete type annotations for IDE support
 - **Pydantic Models**: All data structures are Pydantic models for validation
