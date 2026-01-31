@@ -7,7 +7,6 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 [![PyPI downloads](https://img.shields.io/pypi/dm/raglineage.svg)](https://pypi.org/project/raglineage/)
 
-> **v0.2.7**: `rag.stats()`, `rag.batch_query()`, `answer.to_markdown()`, `raglineage stats` CLI, `--output json` for query
 
 ## The Unique Idea
 
