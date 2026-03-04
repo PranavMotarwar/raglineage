@@ -6,7 +6,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from raglineage import RagLineage
+from raglineage import RagLineage, __version__
 from raglineage.lineage.diff import VersionDiff
 from raglineage.retrieval.filters import FilterConfig
 from raglineage.utils.logging import get_logger
@@ -14,6 +14,17 @@ from raglineage.utils.logging import get_logger
 app = typer.Typer(help="raglineage - Lineage-aware RAG engine")
 console = Console()
 logger = get_logger(__name__)
+
+
+@app.callback(invoke_without_command=True)
+def main(
+    ctx: typer.Context,
+    show_version: bool = typer.Option(False, "--version", help="Show version and exit"),
+) -> None:
+    """raglineage - Lineage-aware RAG engine."""
+    if show_version:
+        console.print(__version__)
+        raise typer.Exit()
 
 
 @app.command()

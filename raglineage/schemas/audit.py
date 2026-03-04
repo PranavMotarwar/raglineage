@@ -7,6 +7,17 @@ from pydantic import BaseModel, Field
 from raglineage.schemas.lineage_node import SourceRef
 
 
+class RetrievalHit(BaseModel):
+    """A single retrieved chunk with content and lineage. Use with your own LLM."""
+
+    content: str = Field(..., description="Chunk text content")
+    score: float = Field(..., description="Similarity score")
+    ln_id: str = Field(..., description="Lineage Node ID")
+    source: SourceRef = Field(..., description="Source reference")
+    dataset_version: str = Field(..., description="Dataset version")
+    transform_chain: list[str] = Field(default_factory=list, description="Transform chain")
+
+
 class LineageEntry(BaseModel):
     """A single lineage entry in an answer's provenance."""
 

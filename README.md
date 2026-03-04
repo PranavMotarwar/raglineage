@@ -7,6 +7,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-orange.svg)](https://opensource.org/licenses/Apache-2.0)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/raglineage?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/raglineage)
 
+> **v0.2.8**: `rag.retrieve()` for raw chunks + lineage (use with your own LLM), `raglineage --version`
 
 ## The Unique Idea
 
@@ -168,6 +169,11 @@ answers = rag.batch_query(["Question 1?", "Question 2?"], k=3)
 
 # Export answer to Markdown for reports
 print(ans.to_markdown())
+
+# Retrieve raw chunks only (use with your own LLM)
+hits = rag.retrieve("What is the refund policy?", k=5)
+context = "\n\n".join(h.content for h in hits)
+# Pass context to OpenAI, Claude, etc.
 ```
 
 ### Examples
@@ -322,8 +328,10 @@ Every answer includes:
 ### 11. Export and Integration
 - **JSON Export**: Export lineage graph, answers, audit reports as JSON
 - **Markdown Export**: `answer.to_markdown()` for reports and sharing
+- **Retrieve only**: `rag.retrieve(question, k)` returns raw chunks + lineage for your own LLM (no built-in answer)
 - **Batch Query**: `rag.batch_query(questions)` for processing multiple questions
 - **Dataset Stats**: `rag.stats()` for node count, versions, and build status
+- **CLI version**: `raglineage --version` to check installed version
 - **Python API**: Full programmatic access to all features
 - **Type Hints**: Complete type annotations for IDE support
 - **Pydantic Models**: All data structures are Pydantic models for validation

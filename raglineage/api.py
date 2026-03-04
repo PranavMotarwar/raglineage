@@ -13,7 +13,7 @@ from raglineage.lineage.graph import LineageGraph
 from raglineage.lineage.versioning import VersionStore
 from raglineage.retrieval.filters import FilterConfig
 from raglineage.retrieval.retriever import Retriever
-from raglineage.schemas.audit import AnswerWithLineage, LineageEntry
+from raglineage.schemas.audit import AnswerWithLineage, LineageEntry, RetrievalHit
 from raglineage.schemas.stats import RagLineageStats
 from raglineage.schemas.lineage_node import LineageNode
 from raglineage.store.base import BaseVectorStore
@@ -366,6 +366,50 @@ class RagLineage:
             lineage=lineage_entries,
             metadata={},
         )
+
+    def retrieve(
+        self, question: str, k: int = 5, filters: FilterConfig | None = None
+    ) -> list[RetrievalHit]:
+        """
+        Retrieve chunks with lineage only (no generated answer). Use with your own LLM.
+
+        Returns list of RetrievalHit with content, score, and source. Build your own
+        context string or prompt from hit.content and pass to any LLM.
+
+        Args:
+            question: Query question
+            k: Number of results
+            filters: Optional filters
+
+        Returns:
+            List of RetrievalHit (content, score, source, version, etc.)
+        """
+        if self.retriever is None:
+            embedder = self._initialize_embedder()
+            store = self._initialize_store()
+            self._load_graph()
+            self.retriever = Retriever(embedder, store, self.graph, self.node_registry)
+
+        results = self.retriever.retrieve(
+            question, k=k, filters=filters, graph_depth=self.config.graph_depth
+        )
+
+        hits = []
+        for ln_id, score in results:
+            if ln_id not in self.node_registry:
+                continue
+            ln = self.node_registry[ln_id]
+            hits.append(
+                RetrievalHit(
+                    content=ln.content,
+                    score=score,
+                    ln_id=ln.ln_id,
+                    source=ln.source,
+                    dataset_version=ln.dataset_version,
+                    transform_chain=ln.transform_chain,
+                )
+            )
+        return hits
 
     def audit(self, answer: AnswerWithLineage) -> Any:
         """
