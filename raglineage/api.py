@@ -1,7 +1,10 @@
 """High-level API for RagLineage."""
 
+import fnmatch
 from pathlib import Path
 from typing import Any, Optional
+
+import yaml
 
 from raglineage.audit.auditor import Auditor
 from raglineage.config import RagLineageConfig
@@ -93,6 +96,47 @@ class RagLineage:
         self.storage_dir = self.source / ".raglineage"
         ensure_dir(self.storage_dir)
 
+    @classmethod
+    def from_config(cls, path: Path | str) -> "RagLineage":
+        """
+        Create RagLineage from a YAML config file.
+
+        Config keys: source (required), store_backend, embed_backend, embed_model,
+        chunk_size, chunk_overlap, chunking_strategy, enable_dedupe, enable_normalize,
+        normalize_aggressive, graph_depth. Path can be relative to config file.
+
+        Example YAML:
+          source: ./data
+          embed_backend: local
+          chunk_size: 1000
+          chunk_overlap: 200
+        """
+        path = Path(path)
+        if not path.exists():
+            raise FileNotFoundError(f"Config file not found: {path}")
+        with path.open() as f:
+            data = yaml.safe_load(f) or {}
+        if "source" not in data:
+            raise ValueError("Config must contain 'source'")
+        # Resolve source relative to config file directory
+        source = data["source"]
+        if not Path(source).is_absolute():
+            source = str(path.parent / source)
+        kwargs = {
+            "source": source,
+            "store_backend": data.get("store_backend", "faiss"),
+            "embed_backend": data.get("embed_backend", "local"),
+            "embed_model": data.get("embed_model", "all-MiniLM-L6-v2"),
+            "chunk_size": int(data.get("chunk_size", 1000)),
+            "chunk_overlap": int(data.get("chunk_overlap", 200)),
+            "chunking_strategy": data.get("chunking_strategy", "semantic"),
+            "enable_dedupe": bool(data.get("enable_dedupe", True)),
+            "enable_normalize": bool(data.get("enable_normalize", True)),
+            "normalize_aggressive": bool(data.get("normalize_aggressive", False)),
+            "graph_depth": int(data.get("graph_depth", 1)),
+        }
+        return cls(**kwargs)
+
     def _initialize_embedder(self) -> BaseEmbedder:
         """Initialize embedding backend."""
         if self.embedder is not None:
@@ -140,12 +184,17 @@ class RagLineage:
         graph_path = self.storage_dir / "graph.json"
         save_json(self.graph.export_json(), graph_path)
 
-    def build(self, version: str = "v1.0") -> None:
+    def build(
+        self,
+        version: str = "v1.0",
+        exclude: Optional[list[str]] = None,
+    ) -> None:
         """
         Build RAG database from source.
 
         Args:
             version: Dataset version tag
+            exclude: Optional list of glob patterns to exclude (e.g. ["*.log", ".git/*", "__pycache__"])
         """
         logger.info(f"Building RAG database version {version} from {self.source}")
 
@@ -160,6 +209,21 @@ class RagLineage:
         elif self.source.is_dir():
             source_files = list(self.source.rglob("*"))
             source_files = [f for f in source_files if f.is_file()]
+
+        # Apply exclude patterns (glob-style: *.log, .git, __pycache__, etc.)
+        if exclude:
+            filtered = []
+            for f in source_files:
+                rel = str(f.relative_to(self.source)).replace("\\", "/")
+                skip = False
+                for p in exclude:
+                    p_ = p.rstrip("/")
+                    if fnmatch.fnmatch(rel, p) or rel == p_ or rel.startswith(p_ + "/"):
+                        skip = True
+                        break
+                if not skip:
+                    filtered.append(f)
+            source_files = filtered
 
         # Create version
         relative_files = [f.relative_to(self.source) for f in source_files]
@@ -410,6 +474,26 @@ class RagLineage:
                 )
             )
         return hits
+
+    @staticmethod
+    def format_context_for_llm(
+        hits: list[RetrievalHit],
+        include_sources: bool = True,
+        separator: str = "\n\n",
+        max_content_chars: Optional[int] = None,
+    ) -> str:
+        """
+        Format retrieval hits into a single context string for LLM prompts.
+
+        Example: context = RagLineage.format_context_for_llm(rag.retrieve("...", k=5))
+        Then pass context to your LLM. Also available as RetrievalHit.format_context_for_llm(hits).
+        """
+        return RetrievalHit.format_context_for_llm(
+            hits,
+            include_sources=include_sources,
+            separator=separator,
+            max_content_chars=max_content_chars,
+        )
 
     def audit(self, answer: AnswerWithLineage) -> Any:
         """
