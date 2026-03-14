@@ -7,6 +7,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-orange.svg)](https://opensource.org/licenses/Apache-2.0)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/raglineage?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/raglineage)
 
+> **v0.2.9**: Config from YAML, exclude patterns for build, `format_context_for_llm()`, `raglineage validate` (CI)
 
 ## The Unique Idea
 
@@ -148,8 +149,8 @@ rag = RagLineage(
     embed_backend="local"
 )
 
-# Build initial version
-rag.build(version="v1.0")
+# Build initial version (optionally exclude files: *.log, .git, etc.)
+rag.build(version="v1.0", exclude=["*.log", ".git", "__pycache__"])
 
 # Query with lineage
 ans = rag.query("What is the refund policy?", k=5)
@@ -169,10 +170,13 @@ answers = rag.batch_query(["Question 1?", "Question 2?"], k=3)
 # Export answer to Markdown for reports
 print(ans.to_markdown())
 
-# Retrieve raw chunks only (use with your own LLM)
+# Retrieve raw chunks and format for your LLM (with source citations)
 hits = rag.retrieve("What is the refund policy?", k=5)
-context = "\n\n".join(h.content for h in hits)
+context = RagLineage.format_context_for_llm(hits)  # or RetrievalHit.format_context_for_llm(hits)
 # Pass context to OpenAI, Claude, etc.
+
+# Or load config from YAML (source, chunk_size, embed_backend, etc.)
+rag = RagLineage.from_config("raglineage.yaml")
 ```
 
 ### Examples
@@ -187,8 +191,9 @@ Check out the examples directory:
 # Initialize a project
 raglineage init ./my_project
 
-# Build from source
+# Build from source (optionally exclude patterns)
 raglineage build --source ./data --version v1.0
+raglineage build --source ./data -e "*.log" -e ".git" -e "__pycache__"
 
 # Update incrementally
 raglineage update --source ./data --version v1.1 --changed-only
@@ -199,6 +204,9 @@ raglineage query "What is the refund policy?" --output json  # For piping, CI/CD
 
 # Show dataset statistics
 raglineage stats --source ./data
+
+# Validate dataset (exit 0/1 for CI)
+raglineage validate --source ./data
 
 # Diff versions
 raglineage diff v1.0 v1.1
@@ -327,9 +335,13 @@ Every answer includes:
 ### 11. Export and Integration
 - **JSON Export**: Export lineage graph, answers, audit reports as JSON
 - **Markdown Export**: `answer.to_markdown()` for reports and sharing
-- **Retrieve only**: `rag.retrieve(question, k)` returns raw chunks + lineage for your own LLM (no built-in answer)
+- **Retrieve only**: `rag.retrieve(question, k)` returns raw chunks + lineage for your own LLM
+- **Format for LLM**: `RagLineage.format_context_for_llm(hits)` or `RetrievalHit.format_context_for_llm(hits)` — one string with optional source citations for prompts
+- **Config from YAML**: `RagLineage.from_config("raglineage.yaml")` — source, chunk_size, embed_backend, etc.
+- **Build exclude patterns**: `rag.build(version="v1.0", exclude=["*.log", ".git"])` — skip files by glob
 - **Batch Query**: `rag.batch_query(questions)` for processing multiple questions
 - **Dataset Stats**: `rag.stats()` for node count, versions, and build status
+- **Validate (CI)**: `raglineage validate --source ./data` — exit 0/1 for pipelines
 - **CLI version**: `raglineage --version` to check installed version
 - **Python API**: Full programmatic access to all features
 - **Type Hints**: Complete type annotations for IDE support

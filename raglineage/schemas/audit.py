@@ -17,6 +17,39 @@ class RetrievalHit(BaseModel):
     dataset_version: str = Field(..., description="Dataset version")
     transform_chain: list[str] = Field(default_factory=list, description="Transform chain")
 
+    @staticmethod
+    def format_context_for_llm(
+        hits: list["RetrievalHit"],
+        include_sources: bool = True,
+        separator: str = "\n\n",
+        max_content_chars: Optional[int] = None,
+    ) -> str:
+        """
+        Format retrieved hits into a single context string for LLM prompts.
+
+        Use with your own LLM: paste the returned string into a system or user message.
+
+        Args:
+            hits: List of RetrievalHit from rag.retrieve()
+            include_sources: Prepend source URI to each chunk for citation
+            separator: String between chunks
+            max_content_chars: Truncate each chunk to this length (None = no limit)
+
+        Returns:
+            Formatted context string ready for prompt
+        """
+        parts = []
+        for i, h in enumerate(hits, 1):
+            text = h.content
+            if max_content_chars and len(text) > max_content_chars:
+                text = text[:max_content_chars] + "..."
+            if include_sources:
+                uri = getattr(h.source, "uri", str(h.source))
+                parts.append(f"[{i}] (source: {uri})\n{text}")
+            else:
+                parts.append(f"[{i}]\n{text}")
+        return separator.join(parts)
+
 
 class LineageEntry(BaseModel):
     """A single lineage entry in an answer's provenance."""

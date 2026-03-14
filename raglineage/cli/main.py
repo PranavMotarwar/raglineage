@@ -41,6 +41,7 @@ def build(
     version: str = typer.Option("v1.0", "--version", "-v", help="Dataset version"),
     chunk_size: int = typer.Option(1000, "--chunk-size", help="Chunk size"),
     chunk_overlap: int = typer.Option(200, "--chunk-overlap", help="Chunk overlap"),
+    exclude: list[str] = typer.Option([], "--exclude", "-e", help="Exclude pattern (e.g. *.log, .git; repeatable)"),
 ) -> None:
     """Build RAG database from source."""
     console.print(f"[cyan]Building RAG database from: {source}")
@@ -49,7 +50,7 @@ def build(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
     )
-    rag.build(version=version)
+    rag.build(version=version, exclude=exclude or None)
     console.print(f"[green]Build complete: version {version}")
 
 
@@ -123,6 +124,22 @@ def query(
     console.print(f"  Version Consistency: {report.version_consistency}")
     if report.transform_risk_flags:
         console.print(f"  Risk Flags: {', '.join(report.transform_risk_flags)}")
+
+
+@app.command()
+def validate(
+    source: str = typer.Option(..., "--source", "-s", help="Source directory"),
+) -> None:
+    """Validate dataset: check build status and exit 0 if OK, 1 otherwise (for CI)."""
+    rag = RagLineage(source=source)
+    s = rag.stats()
+    if not s.is_built:
+        console.print("[red]Validation failed: dataset not built. Run 'raglineage build' first.[/red]")
+        raise typer.Exit(1)
+    if s.node_count == 0:
+        console.print("[red]Validation failed: no lineage nodes. Rebuild with non-empty source.[/red]")
+        raise typer.Exit(1)
+    console.print(f"[green]Valid: {s.node_count} nodes, version {s.current_version}[/green]")
 
 
 @app.command()

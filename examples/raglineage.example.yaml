@@ -1,0 +1,14 @@
+# Example raglineage config (copy to raglineage.yaml and adjust)
+# Use: rag = RagLineage.from_config("raglineage.yaml")
+
+source: ./data
+store_backend: faiss
+embed_backend: local
+embed_model: all-MiniLM-L6-v2
+chunk_size: 1000
+chunk_overlap: 200
+chunking_strategy: semantic
+enable_dedupe: true
+enable_normalize: true
+normalize_aggressive: false
+graph_depth: 1
