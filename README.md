@@ -7,8 +7,6 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-orange.svg)](https://opensource.org/licenses/Apache-2.0)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/raglineage?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/raglineage)
 
-> **v0.2.9**: Config from YAML, exclude patterns for build, `format_context_for_llm()`, `raglineage validate` (CI)
-
 ## The Unique Idea
 
 Most RAG tools store text chunks and embeddings. They lose provenance and cannot explain answer drift.
