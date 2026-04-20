@@ -1,5 +1,8 @@
 """Local embedding backend using sentence-transformers."""
 
+from __future__ import annotations
+
+import hashlib
 from typing import Optional
 
 import numpy as np
@@ -23,23 +26,55 @@ class LocalEmbedder(BaseEmbedder):
         Args:
             model_name: Sentence-transformer model name
         """
-        logger.info(f"Loading embedding model: {model_name}")
-        self.model: SentenceTransformer = SentenceTransformer(model_name)
         self._dimension: Optional[int] = None
+        self._fallback = False
+        self._fallback_dim = 384
+
+        logger.info(f"Loading embedding model: {model_name}")
+        try:
+            self.model: SentenceTransformer | None = SentenceTransformer(model_name)
+        except Exception as e:
+            # Useful in offline / restricted environments (and makes tests resilient).
+            self.model = None
+            self._fallback = True
+            logger.warning(
+                f"Failed to load sentence-transformers model '{model_name}'. "
+                f"Falling back to deterministic hash embeddings. Error: {e}"
+            )
 
     def embed(self, text: str) -> np.ndarray:
         """Embed a single text."""
-        return self.model.encode(text, convert_to_numpy=True)
+        if self.model is not None:
+            return self.model.encode(text, convert_to_numpy=True)
+        return self._hash_embed(text)
 
     def embed_batch(self, texts: list[str]) -> np.ndarray:
         """Embed a batch of texts."""
-        return self.model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
+        if self.model is not None:
+            return self.model.encode(texts, convert_to_numpy=True, show_progress_bar=False)
+        return np.vstack([self._hash_embed(t) for t in texts])
 
     @property
     def dimension(self) -> int:
         """Return embedding dimension."""
         if self._dimension is None:
-            # Get dimension by embedding a dummy text
-            dummy_embedding = self.embed("dummy")
-            self._dimension = len(dummy_embedding)
+            if self.model is None:
+                self._dimension = self._fallback_dim
+            else:
+                dummy_embedding = self.embed("dummy")
+                self._dimension = len(dummy_embedding)
         return self._dimension
+
+    def _hash_embed(self, text: str) -> np.ndarray:
+        """Deterministic, offline fallback embedding.
+
+        Not meant for production quality retrieval, but useful for demos/tests
+        and environments without model downloads.
+        """
+        h = hashlib.sha256(text.encode("utf-8")).digest()
+        seed = int.from_bytes(h[:8], "little", signed=False)
+        rng = np.random.default_rng(seed)
+        v = rng.standard_normal(self._fallback_dim, dtype=np.float32)
+        # Normalize to unit length for cosine-like behavior
+        n = float(np.linalg.norm(v)) or 1.0
+        return v / n

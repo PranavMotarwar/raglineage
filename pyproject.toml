@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "raglineage"
-version = "0.2.9"
+version = "0.2.10"
 description = "Lineage-aware RAG engine for auditable, reproducible, versioned retrieval and answers"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -28,6 +28,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
+    "numpy>=1.23.0",
     "pydantic>=2.0.0",
     "networkx>=3.0",
     "faiss-cpu>=1.7.4",

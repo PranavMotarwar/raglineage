@@ -7,6 +7,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-orange.svg)](https://opensource.org/licenses/Apache-2.0)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/raglineage?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/raglineage)
 
+> **v0.2.10**: Pure-Python `numpy` vector store fallback (no FAISS) + offline hash-embedding fallback
 ## The Unique Idea
 
 Most RAG tools store text chunks and embeddings. They lose provenance and cannot explain answer drift.
@@ -192,6 +193,9 @@ raglineage init ./my_project
 # Build from source (optionally exclude patterns)
 raglineage build --source ./data --version v1.0
 raglineage build --source ./data -e "*.log" -e ".git" -e "__pycache__"
+
+# Use pure-Python store (no FAISS) if needed
+raglineage build --source ./data --store-backend numpy
 
 # Update incrementally
 raglineage update --source ./data --version v1.1 --changed-only

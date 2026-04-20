@@ -11,7 +11,7 @@ class RagLineageConfig:
     """Configuration for RagLineage."""
 
     source: Union[Path, str]
-    store_backend: Literal["faiss"] = "faiss"
+    store_backend: Literal["faiss", "numpy", "bruteforce"] = "faiss"
     embed_backend: Literal["local", "openai"] = "local"
     embed_model: str = "all-MiniLM-L6-v2"
     chunk_size: int = 1000

@@ -39,6 +39,7 @@ def init(path: str = typer.Argument(..., help="Path to initialize")) -> None:
 def build(
     source: str = typer.Option(..., "--source", "-s", help="Source directory or file"),
     version: str = typer.Option("v1.0", "--version", "-v", help="Dataset version"),
+    store_backend: str = typer.Option("faiss", "--store-backend", help="Vector store backend: faiss or numpy"),
     chunk_size: int = typer.Option(1000, "--chunk-size", help="Chunk size"),
     chunk_overlap: int = typer.Option(200, "--chunk-overlap", help="Chunk overlap"),
     exclude: list[str] = typer.Option([], "--exclude", "-e", help="Exclude pattern (e.g. *.log, .git; repeatable)"),
@@ -47,6 +48,7 @@ def build(
     console.print(f"[cyan]Building RAG database from: {source}")
     rag = RagLineage(
         source=source,
+        store_backend=store_backend,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
     )

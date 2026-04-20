@@ -20,7 +20,7 @@ from raglineage.schemas.audit import AnswerWithLineage, LineageEntry, RetrievalH
 from raglineage.schemas.stats import RagLineageStats
 from raglineage.schemas.lineage_node import LineageNode
 from raglineage.store.base import BaseVectorStore
-from raglineage.store.faiss_store import FAISSStore
+from raglineage.store.numpy_store import NumpyStore
 from raglineage.transform.chunkers import SemanticChunkerTransform, SimpleChunkerTransform
 from raglineage.transform.dedupe import DedupeTransform
 from raglineage.transform.normalize import NormalizeTransform
@@ -163,8 +163,16 @@ class RagLineage:
 
         if self.config.store_backend == "faiss":
             store_path = self.storage_dir / "faiss_index"
+            # Import lazily so raglineage can work without FAISS installed.
+            from raglineage.store.faiss_store import FAISSStore
+
             self.store = FAISSStore(dimension)
             if store_path.exists():
+                self.store.load(str(store_path))
+        elif self.config.store_backend in ("numpy", "bruteforce"):
+            store_path = self.storage_dir / "numpy_index"
+            self.store = NumpyStore(dimension)
+            if store_path.with_suffix(".npy").exists():
                 self.store.load(str(store_path))
         else:
             raise ValueError(f"Unknown store backend: {self.config.store_backend}")
