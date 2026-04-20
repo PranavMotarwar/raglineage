@@ -7,9 +7,6 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-orange.svg)](https://opensource.org/licenses/Apache-2.0)
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/raglineage?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/raglineage)
 
-> **v0.2.10**: Pure-Python `numpy` vector store fallback (no FAISS) + offline hash-embedding fallback
-## The Unique Idea
-
 Most RAG tools store text chunks and embeddings. They lose provenance and cannot explain answer drift.
 
 **raglineage** treats RAG as a data lineage and provenance problem, not just vector search. Every retrievable unit is a **Lineage Node (LN)** with:
