@@ -211,6 +211,42 @@ raglineage validate --source ./data
 raglineage diff v1.0 v1.1
 ```
 
+## Troubleshooting & Common Recipes
+
+### FAISS install issues / segfaults
+
+If FAISS is hard to install on your platform (or you see crashes), use the **pure-Python** store:
+
+```python
+rag = RagLineage(source="./data", store_backend="numpy")
+rag.build(version="v1.0")
+```
+
+Or via CLI:
+
+```bash
+raglineage build --source ./data --store-backend numpy
+```
+
+### Offline / restricted environments (no model downloads)
+
+If the `sentence-transformers` model can’t be downloaded/loaded, `embed_backend="local"` will fall back to a deterministic **hash embedding** so builds and tests still work. (Retrieval quality will be lower, but it’s useful for demos/CI.)
+
+### Build only what you want
+
+Exclude patterns when building:
+
+```python
+rag.build(version="v1.0", exclude=["*.log", ".git", "__pycache__"])
+```
+
+### Use your own LLM with citations
+
+```python
+hits = rag.retrieve("What is the refund policy?", k=5)
+context = RagLineage.format_context_for_llm(hits, include_sources=True)
+```
+
 ## Comparison with Other RAG Tools
 
 | Feature | raglineage | LangChain | LlamaIndex |
