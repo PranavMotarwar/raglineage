@@ -9,7 +9,7 @@
 
 Most RAG tools store text chunks and embeddings. They lose provenance and cannot explain answer drift.
 
-**raglineage** treats RAG as a data lineage and provenance problem, not just vector search. Every retrievable unit is a **Lineage Node (LN)** with:
+**raglineage** transforms RAG into a data lineage solution, not just vector search. Every retrievable unit is a **Lineage Node (LN)** with:
 
 - Immutable ID and dataset version
 - Precise source reference (file path, page, row, URL)
