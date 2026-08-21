@@ -7,7 +7,6 @@ from rich.console import Console
 from rich.table import Table
 
 from raglineage import RagLineage, __version__
-from raglineage.lineage.diff import VersionDiff
 from raglineage.retrieval.filters import FilterConfig
 from raglineage.utils.logging import get_logger
 
@@ -75,14 +74,15 @@ def query(
     source: str = typer.Option(..., "--source", "-s", help="Source directory"),
     k: int = typer.Option(5, "--k", help="Number of results"),
     version: str = typer.Option(None, "--version", help="Filter by dataset version"),
+    min_score: float = typer.Option(0.0, "--min-score", help="Minimum similarity score (0–1)"),
     output: str = typer.Option("table", "--output", "-o", help="Output format: table or json"),
 ) -> None:
     """Query the RAG database."""
     rag = RagLineage(source=source)
 
     filters = None
-    if version:
-        filters = FilterConfig(dataset_version=version)
+    if version is not None or min_score > 0:
+        filters = FilterConfig(dataset_version=version, min_score=min_score)
 
     answer = rag.query(question, k=k, filters=filters)
     report = rag.audit(answer)
@@ -126,6 +126,73 @@ def query(
     console.print(f"  Version Consistency: {report.version_consistency}")
     if report.transform_risk_flags:
         console.print(f"  Risk Flags: {', '.join(report.transform_risk_flags)}")
+
+
+@app.command("retrieve")
+def retrieve_chunks(
+    question: str = typer.Argument(..., help="Query text"),
+    source: str = typer.Option(..., "--source", "-s", help="Source directory"),
+    k: int = typer.Option(5, "--k", help="Number of hits"),
+    version: str = typer.Option(None, "--version", help="Filter by dataset version"),
+    min_score: float = typer.Option(0.0, "--min-score", help="Minimum similarity score (0–1)"),
+    output: str = typer.Option(
+        "json",
+        "--output",
+        "-o",
+        help="Output: json (hits), llm (formatted context only), table",
+    ),
+) -> None:
+    """Retrieve chunks with lineage (no synthetic answer). For piping into your own LLM."""
+    import json
+
+    rag = RagLineage(source=source)
+    filters = None
+    if version is not None or min_score > 0:
+        filters = FilterConfig(dataset_version=version, min_score=min_score)
+    hits = rag.retrieve(question, k=k, filters=filters)
+
+    if output == "llm":
+        console.print(RagLineage.format_context_for_llm(hits))
+        return
+    if output == "json":
+        out = {
+            "question": question,
+            "hits": [h.model_dump(mode="json") for h in hits],
+            "formatted_context": RagLineage.format_context_for_llm(hits),
+        }
+        console.print(json.dumps(out, indent=2))
+        return
+
+    table = Table(title="Retrieval hits")
+    table.add_column("Score", style="green")
+    table.add_column("LN ID", style="cyan")
+    table.add_column("Version", style="yellow")
+    table.add_column("Source", style="magenta")
+    for h in hits:
+        uri = getattr(h.source, "uri", str(h.source))
+        table.add_row(f"{h.score:.3f}", h.ln_id[:16] + "...", h.dataset_version, uri[:48])
+    console.print(table)
+
+
+@app.command()
+def serve(
+    source: str = typer.Option(..., "--source", "-s", help="Source directory with built dataset"),
+    host: str = typer.Option("127.0.0.1", "--host", help="Bind host"),
+    port: int = typer.Option(8765, "--port", help="Bind port"),
+    store_backend: str = typer.Option("faiss", "--store-backend", help="faiss or numpy"),
+) -> None:
+    """Run HTTP API (FastAPI): GET /health, /stats; POST /query, /retrieve. Requires: pip install raglineage[serve]"""
+    try:
+        import uvicorn  # noqa: WPS433
+
+        from raglineage.serve.app import create_app
+    except ImportError:
+        console.print("[red]Missing dependency. Install with: pip install raglineage[serve][/red]")
+        raise typer.Exit(1)
+
+    app = create_app(source=source, store_backend=store_backend)
+    console.print(f"[cyan]raglineage API[/cyan] http://{host}:{port}  (docs: /docs)")
+    uvicorn.run(app, host=host, port=port)
 
 
 @app.command()

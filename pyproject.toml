@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "raglineage"
-version = "0.2.10"
+version = "0.2.11"
 description = "Lineage-aware RAG engine for auditable, reproducible, versioned retrieval and answers"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -47,6 +47,10 @@ dev = [
 ]
 openai = [
     "openai>=1.0.0",
+]
+serve = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
 ]
 
 [project.urls]
