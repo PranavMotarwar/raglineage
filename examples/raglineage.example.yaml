@@ -5,8 +5,8 @@ source: ./data
 store_backend: numpy
 embed_backend: hash
 embed_model: sentence-transformers/all-MiniLM-L6-v2
-chunk_size: 1000
-chunk_overlap: 200
+chunk_size: 400
+chunk_overlap: 80
 chunking_strategy: semantic
 enable_dedupe: true
 enable_normalize: true

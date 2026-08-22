@@ -32,8 +32,8 @@ class RetrieveRequest(BaseModel):
 def create_app(
     source: str,
     store_backend: str | None = None,
-    chunk_size: int = 1000,
-    chunk_overlap: int = 200,
+    chunk_size: int = 400,
+    chunk_overlap: int = 80,
 ) -> FastAPI:
     rag = RagLineage(
         source=source,

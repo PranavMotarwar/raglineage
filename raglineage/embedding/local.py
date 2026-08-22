@@ -13,6 +13,36 @@ from raglineage.utils.logging import get_logger
 logger = get_logger(__name__)
 
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+STOP_WORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "by",
+    "do",
+    "does",
+    "for",
+    "from",
+    "how",
+    "in",
+    "is",
+    "it",
+    "make",
+    "of",
+    "on",
+    "or",
+    "the",
+    "to",
+    "what",
+    "when",
+    "where",
+    "which",
+    "who",
+    "with",
+}
 
 
 class LocalEmbedder(BaseEmbedder):
@@ -27,7 +57,9 @@ class LocalEmbedder(BaseEmbedder):
         """
         self._dimension: Optional[int] = None
         self._fallback = False
-        self._fallback_dim = 384
+        # A wider lexical space keeps collisions low for mixed prose/tabular
+        # corpora while remaining small enough for the portable NumPy backend.
+        self._fallback_dim = 2048
 
         logger.info(f"Loading embedding model: {model_name}")
         if model_name == "hash":
@@ -82,14 +114,19 @@ class LocalEmbedder(BaseEmbedder):
         # the entire document into an unrelated random vector. This remains a
         # lightweight fallback, but provides useful lexical retrieval offline.
         v = np.zeros(self._fallback_dim, dtype=np.float32)
-        tokens = re.findall(r"[\w'-]+", text.casefold())
+        tokens = [
+            token
+            for token in re.findall(r"[\w'-]+", text.casefold())
+            if token not in STOP_WORDS
+        ]
         # Preserve compound identifiers while also indexing their components:
-        # a query for "US" should match values such as "us-west".
+        # a query for "US" should match "us-west", and natural-language
+        # "company contribution" should match tabular key "company_contribution".
         compound_parts = [
             part
             for token in tokens
-            if "-" in token or "'" in token
-            for part in re.split(r"[-']+", token)
+            if "-" in token or "'" in token or "_" in token
+            for part in re.split(r"[-'_]+", token)
             if part
         ]
         tokens.extend(compound_parts)

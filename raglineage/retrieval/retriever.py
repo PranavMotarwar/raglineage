@@ -71,11 +71,13 @@ class Retriever:
         # Graph expansion
         if graph_depth > 0:
             expanded_results = dict(results)
-            for ln_id, _ in results:
+            for ln_id, score in results:
                 neighbors = self.graph.neighbors(ln_id, depth=graph_depth)
                 for neighbor_id in neighbors:
                     if neighbor_id in self.node_registry:
-                        expanded_results.setdefault(neighbor_id, 0.8)
+                        # Expanded context must not receive an arbitrary score
+                        # that can outrank the vector match which led to it.
+                        expanded_results.setdefault(neighbor_id, score * 0.8)
 
             results = list(expanded_results.items())
 

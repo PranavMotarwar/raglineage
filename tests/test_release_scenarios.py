@@ -16,7 +16,11 @@ def test_mixed_formats_exclusions_and_deterministic_rebuild(tmp_path: Path) -> N
     docs.mkdir()
     (docs / "guide.md").write_text("The launch region is Oregon.", encoding="utf-8")
     (docs / "plans.csv").write_text(
-        "plan,price\nStarter,19\nEnterprise,99\n", encoding="utf-8"
+        "plan,price,company_contribution\n"
+        "Starter,19,None\n"
+        "Enterprise,99,None\n"
+        "Retirement plan,0,50 percent match\n",
+        encoding="utf-8",
     )
     (docs / "contacts.json").write_text(
         json.dumps([{"team": "Support", "email": "help@example.com"}]), encoding="utf-8"
@@ -34,11 +38,13 @@ def test_mixed_formats_exclusions_and_deterministic_rebuild(tmp_path: Path) -> N
     assert rebuilt.config.embed_backend == "hash"
     rebuilt.build("v1.0", exclude=["private.md"])
     assert set(rebuilt.node_registry) == first_ids
-    assert rebuilt.stats().node_count == first_count == 4
+    assert rebuilt.stats().node_count == first_count == 5
     assert rebuilt.stats().versions == ["v1.0"]
     assert all("private.md" not in entry.source.uri for entry in rebuilt.retrieve("quartz", k=4))
     region_hits = rebuilt.retrieve("Where is the US primary region?", k=2)
     assert "Oregon" in region_hits[0].content
+    retirement_hits = rebuilt.retrieve("retirement company contribution", k=4)
+    assert "Retirement plan" in retirement_hits[0].content
 
 
 def test_update_is_complete_single_version_snapshot_and_reuses_excludes(tmp_path: Path) -> None:
@@ -103,6 +109,23 @@ def test_filters_remain_enforced_with_graph_expansion(tmp_path: Path) -> None:
     rag.build("v1.0")
     assert rag.retrieve("policy", k=5, filters=FilterConfig(min_score=1.1)) == []
     assert rag.retrieve("policy", k=5, filters=FilterConfig(dataset_version="v9")) == []
+
+
+def test_graph_expansion_cannot_outrank_its_seed_match(tmp_path: Path) -> None:
+    source = tmp_path / "knowledge"
+    source.mkdir()
+    (source / "policy.md").write_text(
+        "Vacation allowance is 20 days. " * 20
+        + "A medical certificate is required after three consecutive sick days.",
+        encoding="utf-8",
+    )
+    rag = RagLineage(source, chunk_size=120, chunk_overlap=20, graph_depth=1)
+    rag.build(version="v1")
+
+    hits = rag.retrieve("When is a medical certificate required?", k=1)
+
+    assert "medical certificate" in hits[0].content.casefold()
+    assert hits[0].score < 0.8
 
 
 def test_cli_default_workflow_and_output_modes(tmp_path: Path) -> None:

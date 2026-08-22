@@ -40,8 +40,8 @@ def init(path: str = typer.Argument(..., help="Path to initialize")) -> None:
             "source: ./docs\n"
             "store_backend: numpy\n"
             "embed_backend: hash\n"
-            "chunk_size: 1000\n"
-            "chunk_overlap: 200\n",
+            "chunk_size: 400\n"
+            "chunk_overlap: 80\n",
             encoding="utf-8",
         )
     readme_path = project_path / "README.md"
@@ -65,8 +65,8 @@ def build(
     store_backend: str = typer.Option("numpy", "--store-backend", help="Vector store backend: numpy or faiss"),
     embed_backend: str = typer.Option("hash", "--embed-backend", help="hash, local, or openai"),
     embed_model: Optional[str] = typer.Option(None, "--embed-model", help="Embedding model name"),
-    chunk_size: int = typer.Option(1000, "--chunk-size", help="Chunk size"),
-    chunk_overlap: int = typer.Option(200, "--chunk-overlap", help="Chunk overlap"),
+    chunk_size: int = typer.Option(400, "--chunk-size", help="Chunk size"),
+    chunk_overlap: int = typer.Option(80, "--chunk-overlap", help="Chunk overlap"),
     exclude: list[str] = typer.Option([], "--exclude", "-e", help="Exclude pattern (e.g. *.log, .git; repeatable)"),
 ) -> None:
     """Build RAG database from source."""

@@ -46,8 +46,8 @@ class RagLineage:
         store_backend: str | None = None,
         embed_backend: str | None = None,
         embed_model: str | None = None,
-        chunk_size: int = 1000,
-        chunk_overlap: int = 200,
+        chunk_size: int = 400,
+        chunk_overlap: int = 80,
         chunking_strategy: str = "semantic",
         enable_dedupe: bool = True,
         enable_normalize: bool = True,
@@ -158,8 +158,8 @@ class RagLineage:
         Example YAML:
           source: ./data
           embed_backend: local
-          chunk_size: 1000
-          chunk_overlap: 200
+          chunk_size: 400
+          chunk_overlap: 80
         """
         path = Path(path)
         if not path.exists():
@@ -179,8 +179,8 @@ class RagLineage:
             "embed_model": data.get(
                 "embed_model", "sentence-transformers/all-MiniLM-L6-v2"
             ),
-            "chunk_size": int(data.get("chunk_size", 1000)),
-            "chunk_overlap": int(data.get("chunk_overlap", 200)),
+            "chunk_size": int(data.get("chunk_size", 400)),
+            "chunk_overlap": int(data.get("chunk_overlap", 80)),
             "chunking_strategy": data.get("chunking_strategy", "semantic"),
             "enable_dedupe": bool(data.get("enable_dedupe", True)),
             "enable_normalize": bool(data.get("enable_normalize", True)),

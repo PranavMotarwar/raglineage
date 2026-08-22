@@ -33,7 +33,7 @@ class ChunkingStrategy(ABC):
 class SimpleChunker(ChunkingStrategy):
     """Simple character-based chunker."""
 
-    def __init__(self, chunk_size: int = 1000, overlap: int = 200) -> None:
+    def __init__(self, chunk_size: int = 400, overlap: int = 80) -> None:
         """
         Initialize simple chunker.
 
@@ -65,7 +65,7 @@ class SimpleChunker(ChunkingStrategy):
 class SemanticChunker(ChunkingStrategy):
     """Semantic chunker using sentence boundaries."""
 
-    def __init__(self, chunk_size: int = 1000, overlap: int = 200) -> None:
+    def __init__(self, chunk_size: int = 400, overlap: int = 80) -> None:
         """
         Initialize semantic chunker.
 
@@ -114,7 +114,7 @@ class SemanticChunker(ChunkingStrategy):
 class SimpleChunkerTransform(BaseTransform):
     """Transform that applies simple chunking."""
 
-    def __init__(self, chunk_size: int = 1000, overlap: int = 200) -> None:
+    def __init__(self, chunk_size: int = 400, overlap: int = 80) -> None:
         """Initialize chunker transform."""
         self.chunker = SimpleChunker(chunk_size, overlap)
 
@@ -145,7 +145,7 @@ class SimpleChunkerTransform(BaseTransform):
 class SemanticChunkerTransform(BaseTransform):
     """Transform that applies semantic chunking."""
 
-    def __init__(self, chunk_size: int = 1000, overlap: int = 200) -> None:
+    def __init__(self, chunk_size: int = 400, overlap: int = 80) -> None:
         """Initialize semantic chunker transform."""
         self.chunker = SemanticChunker(chunk_size, overlap)
 
