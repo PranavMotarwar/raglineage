@@ -31,6 +31,29 @@ def init(path: str = typer.Argument(..., help="Path to initialize")) -> None:
     """Initialize a new raglineage project."""
     project_path = Path(path)
     project_path.mkdir(parents=True, exist_ok=True)
+    docs_path = project_path / "docs"
+    docs_path.mkdir(exist_ok=True)
+    config_path = project_path / "raglineage.yaml"
+    if not config_path.exists():
+        config_path.write_text(
+            "source: ./docs\n"
+            "store_backend: numpy\n"
+            "embed_backend: local\n"
+            "chunk_size: 1000\n"
+            "chunk_overlap: 200\n",
+            encoding="utf-8",
+        )
+    readme_path = project_path / "README.md"
+    if not readme_path.exists():
+        readme_path.write_text(
+            "# raglineage project\n\n"
+            "Add Markdown, text, CSV, JSON, or PDF files to `docs/`, then run:\n\n"
+            "```bash\n"
+            "raglineage build --source docs --store-backend numpy\n"
+            "raglineage retrieve \"your question\" --source docs --store-backend numpy\n"
+            "```\n",
+            encoding="utf-8",
+        )
     console.print(f"[green]Initialized raglineage project at: {project_path}")
 
 
@@ -60,10 +83,11 @@ def update(
     source: str = typer.Option(..., "--source", "-s", help="Source directory or file"),
     version: str = typer.Option(..., "--version", "-v", help="New dataset version"),
     changed_only: bool = typer.Option(True, "--changed-only/--all", help="Only process changed files"),
+    store_backend: str = typer.Option("faiss", "--store-backend", help="faiss or numpy"),
 ) -> None:
     """Update RAG database incrementally."""
     console.print(f"[cyan]Updating RAG database: {source}")
-    rag = RagLineage(source=source)
+    rag = RagLineage(source=source, store_backend=store_backend)
     rag.update(version=version, changed_only=changed_only)
     console.print(f"[green]Update complete: version {version}")
 
@@ -76,9 +100,10 @@ def query(
     version: str = typer.Option(None, "--version", help="Filter by dataset version"),
     min_score: float = typer.Option(0.0, "--min-score", help="Minimum similarity score (0–1)"),
     output: str = typer.Option("table", "--output", "-o", help="Output format: table or json"),
+    store_backend: str = typer.Option("faiss", "--store-backend", help="faiss or numpy"),
 ) -> None:
     """Query the RAG database."""
-    rag = RagLineage(source=source)
+    rag = RagLineage(source=source, store_backend=store_backend)
 
     filters = None
     if version is not None or min_score > 0:
@@ -141,11 +166,12 @@ def retrieve_chunks(
         "-o",
         help="Output: json (hits), llm (formatted context only), table",
     ),
+    store_backend: str = typer.Option("faiss", "--store-backend", help="faiss or numpy"),
 ) -> None:
     """Retrieve chunks with lineage (no synthetic answer). For piping into your own LLM."""
     import json
 
-    rag = RagLineage(source=source)
+    rag = RagLineage(source=source, store_backend=store_backend)
     filters = None
     if version is not None or min_score > 0:
         filters = FilterConfig(dataset_version=version, min_score=min_score)
@@ -198,9 +224,10 @@ def serve(
 @app.command()
 def validate(
     source: str = typer.Option(..., "--source", "-s", help="Source directory"),
+    store_backend: str = typer.Option("faiss", "--store-backend", help="faiss or numpy"),
 ) -> None:
     """Validate dataset: check build status and exit 0 if OK, 1 otherwise (for CI)."""
-    rag = RagLineage(source=source)
+    rag = RagLineage(source=source, store_backend=store_backend)
     s = rag.stats()
     if not s.is_built:
         console.print("[red]Validation failed: dataset not built. Run 'raglineage build' first.[/red]")
@@ -214,9 +241,10 @@ def validate(
 @app.command()
 def stats(
     source: str = typer.Option(..., "--source", "-s", help="Source directory"),
+    store_backend: str = typer.Option("faiss", "--store-backend", help="faiss or numpy"),
 ) -> None:
     """Show dataset statistics (node count, versions, build status)."""
-    rag = RagLineage(source=source)
+    rag = RagLineage(source=source, store_backend=store_backend)
     s = rag.stats()
 
     console.print("\n[bold]raglineage Dataset Stats[/bold]")

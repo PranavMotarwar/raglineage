@@ -118,11 +118,9 @@ class LineageGraph:
         for ln_id, data in self.graph.nodes(data=True):
             ln: LineageNode = data.get("lineage_node")
             if ln:
-                nodes[ln_id] = {
-                    "ln_id": ln.ln_id,
-                    "content_hash": ln.content_hash,
-                    "dataset_version": ln.dataset_version,
-                }
+                # Persist the complete node. Retrieval happens in a fresh process
+                # and needs content, source and transform metadata, not only IDs.
+                nodes[ln_id] = ln.model_dump(mode="json")
 
         for source, target, data in self.graph.edges(data=True):
             edges.append(
@@ -146,9 +144,14 @@ class LineageGraph:
         self.graph.clear()
 
         # Add nodes
-        for ln_id in data.get("nodes", {}):
-            if ln_id in node_registry:
-                self.add_node(node_registry[ln_id])
+        for ln_id, node_data in data.get("nodes", {}).items():
+            if ln_id not in node_registry:
+                try:
+                    node_registry[ln_id] = LineageNode.model_validate(node_data)
+                except Exception as exc:
+                    logger.warning(f"Skipping invalid persisted lineage node {ln_id}: {exc}")
+                    continue
+            self.add_node(node_registry[ln_id])
 
         # Add edges
         for edge in data.get("edges", []):

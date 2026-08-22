@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from typing import Optional
 
 import numpy as np
@@ -13,7 +14,7 @@ from raglineage.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-DEFAULT_MODEL = "all-MiniLM-L6-v2"
+DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 
 class LocalEmbedder(BaseEmbedder):
@@ -71,10 +72,16 @@ class LocalEmbedder(BaseEmbedder):
         Not meant for production quality retrieval, but useful for demos/tests
         and environments without model downloads.
         """
-        h = hashlib.sha256(text.encode("utf-8")).digest()
-        seed = int.from_bytes(h[:8], "little", signed=False)
-        rng = np.random.default_rng(seed)
-        v = rng.standard_normal(self._fallback_dim, dtype=np.float32)
+        # Signed feature hashing preserves shared word features, unlike hashing
+        # the entire document into an unrelated random vector. This remains a
+        # lightweight fallback, but provides useful lexical retrieval offline.
+        v = np.zeros(self._fallback_dim, dtype=np.float32)
+        tokens = re.findall(r"[\w'-]+", text.casefold())
+        for token in tokens:
+            digest = hashlib.sha256(token.encode("utf-8")).digest()
+            index = int.from_bytes(digest[:4], "little") % self._fallback_dim
+            sign = 1.0 if digest[4] & 1 else -1.0
+            v[index] += sign
         # Normalize to unit length for cosine-like behavior
         n = float(np.linalg.norm(v)) or 1.0
         return v / n

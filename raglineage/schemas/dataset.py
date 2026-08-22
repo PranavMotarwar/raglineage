@@ -1,9 +1,13 @@
 """Dataset manifest and versioning schemas."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class FileEntry(BaseModel):
@@ -39,10 +43,10 @@ class DatasetManifest(BaseModel):
         default_factory=list, description="List of all versions"
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Manifest creation timestamp"
+        default_factory=utc_now, description="Manifest creation timestamp"
     )
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Last update timestamp"
+        default_factory=utc_now, description="Last update timestamp"
     )
     metadata: dict[str, Any] = Field(
         default_factory=dict, description="Dataset-level metadata"
@@ -59,9 +63,12 @@ class DatasetManifest(BaseModel):
         """Add a new version to the manifest."""
         self.versions.append(version)
         self.current_version = version.version
-        self.updated_at = datetime.utcnow()
+        self.updated_at = utc_now()
 
-    class Config:
-        """Pydantic configuration."""
-
-        json_encoders = {datetime: lambda v: v.isoformat() + "Z"}
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def repair_legacy_utc_suffix(cls, value: Any) -> Any:
+        """Accept manifests written as ``+00:00Z`` by versions <= 0.2.11."""
+        if isinstance(value, str) and value.endswith("+00:00Z"):
+            return value[:-1]
+        return value

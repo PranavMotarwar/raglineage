@@ -43,7 +43,7 @@ class RagLineage:
         source: Path | str,
         store_backend: str = "faiss",
         embed_backend: str = "local",
-        embed_model: str = "all-MiniLM-L6-v2",
+        embed_model: str = "sentence-transformers/all-MiniLM-L6-v2",
         chunk_size: int = 1000,
         chunk_overlap: int = 200,
         chunking_strategy: str = "semantic",
@@ -96,6 +96,23 @@ class RagLineage:
         self.storage_dir = self.source / ".raglineage"
         ensure_dir(self.storage_dir)
 
+    def _store_path(self) -> Path:
+        """Return the canonical persistence path for the selected backend."""
+        name = "numpy_index" if self.config.store_backend in ("numpy", "bruteforce") else "faiss_index"
+        return self.storage_dir / name
+
+    def _collect_source_files(self) -> list[Path]:
+        """Collect user inputs while always excluding raglineage's own state."""
+        if self.source.is_file():
+            return [self.source]
+        if not self.source.is_dir():
+            return []
+        return [
+            path
+            for path in self.source.rglob("*")
+            if path.is_file() and self.storage_dir not in path.parents
+        ]
+
     @classmethod
     def from_config(cls, path: Path | str) -> "RagLineage":
         """
@@ -126,7 +143,9 @@ class RagLineage:
             "source": source,
             "store_backend": data.get("store_backend", "faiss"),
             "embed_backend": data.get("embed_backend", "local"),
-            "embed_model": data.get("embed_model", "all-MiniLM-L6-v2"),
+            "embed_model": data.get(
+                "embed_model", "sentence-transformers/all-MiniLM-L6-v2"
+            ),
             "chunk_size": int(data.get("chunk_size", 1000)),
             "chunk_overlap": int(data.get("chunk_overlap", 200)),
             "chunking_strategy": data.get("chunking_strategy", "semantic"),
@@ -162,7 +181,7 @@ class RagLineage:
         dimension = embedder.dimension
 
         if self.config.store_backend == "faiss":
-            store_path = self.storage_dir / "faiss_index"
+            store_path = self._store_path()
             # Import lazily so raglineage can work without FAISS installed.
             from raglineage.store.faiss_store import FAISSStore
 
@@ -170,7 +189,7 @@ class RagLineage:
             if store_path.exists():
                 self.store.load(str(store_path))
         elif self.config.store_backend in ("numpy", "bruteforce"):
-            store_path = self.storage_dir / "numpy_index"
+            store_path = self._store_path()
             self.store = NumpyStore(dimension)
             if store_path.with_suffix(".npy").exists():
                 self.store.load(str(store_path))
@@ -211,12 +230,7 @@ class RagLineage:
         store = self._initialize_store()
 
         # Collect source files
-        source_files: list[Path] = []
-        if self.source.is_file():
-            source_files.append(self.source)
-        elif self.source.is_dir():
-            source_files = list(self.source.rglob("*"))
-            source_files = [f for f in source_files if f.is_file()]
+        source_files = self._collect_source_files()
 
         # Apply exclude patterns (glob-style: *.log, .git, __pycache__, etc.)
         if exclude:
@@ -288,7 +302,7 @@ class RagLineage:
                         self.graph.add_edge(prev_chunk_id, node.ln_id, edge_type="adjacent")
 
         # Save
-        store.save(str(self.storage_dir / "faiss_index"))
+        store.save(str(self._store_path()))
         self._save_graph()
         logger.info(f"Build complete: {len(all_nodes)} nodes, version {version}")
 
@@ -318,12 +332,7 @@ class RagLineage:
             return
 
         # Create new version (will detect changed files)
-        source_files: list[Path] = []
-        if self.source.is_file():
-            source_files.append(self.source)
-        elif self.source.is_dir():
-            source_files = list(self.source.rglob("*"))
-            source_files = [f for f in source_files if f.is_file()]
+        source_files = self._collect_source_files()
 
         relative_files = [f.relative_to(self.source) for f in source_files]
         version_to = self.version_store.create_version(version, relative_files)
@@ -335,6 +344,21 @@ class RagLineage:
         else:
             changed_files = [f.path for f in version_to.files]
             logger.info(f"Processing all files: {len(changed_files)}")
+
+        # Retire chunks belonging to changed or removed source files before
+        # indexing replacements. FAISS keeps tombstoned vectors internally,
+        # but removing their mapping prevents stale retrieval results.
+        changed_set = {str(path) for path in changed_files}
+        for ln_id, node in list(self.node_registry.items()):
+            source_uri = getattr(node.source, "uri", "")
+            try:
+                relative_uri = str(Path(source_uri).relative_to(self.source))
+            except (ValueError, TypeError):
+                relative_uri = str(source_uri)
+            if relative_uri in changed_set:
+                store.remove(ln_id)
+                self.graph.graph.remove_node(ln_id)
+                self.node_registry.pop(ln_id, None)
 
         # Process changed files (simplified - in production would remove old nodes)
         # For now, rebuild changed files
@@ -382,7 +406,8 @@ class RagLineage:
                 self.graph.add_node(node)
                 store.add(node.ln_id, embedding)
 
-            store.save(str(self.storage_dir / "faiss_index"))
+        if changed_files:
+            store.save(str(self._store_path()))
             self._save_graph()
 
         logger.info(f"Update complete: added {len(new_nodes)} nodes, version {version}")
@@ -411,11 +436,12 @@ class RagLineage:
             question, k=k, filters=filters, graph_depth=self.config.graph_depth
         )
 
-        # Build answer (simplified - in production would use LLM)
-        answer_text = f"Based on {len(results)} retrieved documents: {question}"
+        # Core raglineage is provider-neutral: return the best passage as an
+        # extractive answer. Applications that need synthesis should use
+        # retrieve() + format_context_for_llm() with their chosen LLM.
+        answer_text = "No relevant information found."
         if results:
-            top_content = self.node_registry[results[0][0]].content[:200]
-            answer_text += f"\n\nRelevant information: {top_content}..."
+            answer_text = self.node_registry[results[0][0]].content
 
         # Build lineage entries
         lineage_entries = []
@@ -436,7 +462,7 @@ class RagLineage:
             question=question,
             answer=answer_text,
             lineage=lineage_entries,
-            metadata={},
+            metadata={"answer_mode": "extractive", "retrieved_count": len(results)},
         )
 
     def retrieve(
@@ -527,7 +553,8 @@ class RagLineage:
             RagLineageStats with node count, version info, and build status
         """
         storage_path = self.storage_dir
-        is_built = (storage_path / "faiss_index").exists()
+        store_path = self._store_path()
+        is_built = store_path.exists() or store_path.with_suffix(".npy").exists()
 
         node_count = 0
         if is_built:

@@ -213,6 +213,13 @@ raglineage diff v1.0 v1.1
 
 ## Troubleshooting & Common Recipes
 
+### Query answers are extractive
+
+`query()` is provider-neutral and returns the highest-ranked passage as an
+extractive answer with full lineage. It does not call an LLM. For generated or
+synthesized answers, call `retrieve()` and pass
+`RagLineage.format_context_for_llm(hits)` to your preferred model provider.
+
 ### FAISS install issues / segfaults
 
 If FAISS is hard to install on your platform (or you see crashes), use the **pure-Python** store:

@@ -4,7 +4,7 @@
 source: ./data
 store_backend: faiss
 embed_backend: local
-embed_model: all-MiniLM-L6-v2
+embed_model: sentence-transformers/all-MiniLM-L6-v2
 chunk_size: 1000
 chunk_overlap: 200
 chunking_strategy: semantic

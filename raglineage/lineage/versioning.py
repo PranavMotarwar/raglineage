@@ -1,6 +1,6 @@
 """Dataset versioning and manifest management."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -114,13 +114,15 @@ class VersionStore:
                         path=str(file_path),
                         hash=compute_file_hash(full_path),
                         size=full_path.stat().st_size,
-                        modified_at=datetime.fromtimestamp(full_path.stat().st_mtime),
+                        modified_at=datetime.fromtimestamp(
+                            full_path.stat().st_mtime, tz=timezone.utc
+                        ),
                     )
                 )
 
         version_obj = DatasetVersion(
             version=version,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             files=file_entries,
             metadata=metadata or {},
         )
