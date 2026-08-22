@@ -38,7 +38,7 @@ def init(path: str = typer.Argument(..., help="Path to initialize")) -> None:
         config_path.write_text(
             "source: ./docs\n"
             "store_backend: numpy\n"
-            "embed_backend: local\n"
+            "embed_backend: hash\n"
             "chunk_size: 1000\n"
             "chunk_overlap: 200\n",
             encoding="utf-8",
@@ -61,7 +61,7 @@ def init(path: str = typer.Argument(..., help="Path to initialize")) -> None:
 def build(
     source: str = typer.Option(..., "--source", "-s", help="Source directory or file"),
     version: str = typer.Option("v1.0", "--version", "-v", help="Dataset version"),
-    store_backend: str = typer.Option("faiss", "--store-backend", help="Vector store backend: faiss or numpy"),
+    store_backend: str = typer.Option("numpy", "--store-backend", help="Vector store backend: numpy or faiss"),
     chunk_size: int = typer.Option(1000, "--chunk-size", help="Chunk size"),
     chunk_overlap: int = typer.Option(200, "--chunk-overlap", help="Chunk overlap"),
     exclude: list[str] = typer.Option([], "--exclude", "-e", help="Exclude pattern (e.g. *.log, .git; repeatable)"),
@@ -83,12 +83,17 @@ def update(
     source: str = typer.Option(..., "--source", "-s", help="Source directory or file"),
     version: str = typer.Option(..., "--version", "-v", help="New dataset version"),
     changed_only: bool = typer.Option(True, "--changed-only/--all", help="Only process changed files"),
-    store_backend: str = typer.Option("faiss", "--store-backend", help="faiss or numpy"),
+    store_backend: str = typer.Option("numpy", "--store-backend", help="numpy or faiss"),
+    exclude: list[str] = typer.Option([], "--exclude", "-e", help="Override exclude patterns"),
 ) -> None:
     """Update RAG database incrementally."""
     console.print(f"[cyan]Updating RAG database: {source}")
     rag = RagLineage(source=source, store_backend=store_backend)
-    rag.update(version=version, changed_only=changed_only)
+    rag.update(
+        version=version,
+        changed_only=changed_only,
+        exclude=exclude or None,
+    )
     console.print(f"[green]Update complete: version {version}")
 
 
@@ -100,7 +105,7 @@ def query(
     version: str = typer.Option(None, "--version", help="Filter by dataset version"),
     min_score: float = typer.Option(0.0, "--min-score", help="Minimum similarity score (0–1)"),
     output: str = typer.Option("table", "--output", "-o", help="Output format: table or json"),
-    store_backend: str = typer.Option("faiss", "--store-backend", help="faiss or numpy"),
+    store_backend: str = typer.Option("numpy", "--store-backend", help="numpy or faiss"),
 ) -> None:
     """Query the RAG database."""
     rag = RagLineage(source=source, store_backend=store_backend)
@@ -120,7 +125,7 @@ def query(
             "lineage": [e.model_dump(mode="json") for e in answer.lineage],
             "audit": report.model_dump(mode="json"),
         }
-        console.print(json.dumps(out, indent=2))
+        typer.echo(json.dumps(out, indent=2))
         return
 
     console.print(f"\n[bold]Question:[/bold] {answer.question}")
@@ -166,7 +171,7 @@ def retrieve_chunks(
         "-o",
         help="Output: json (hits), llm (formatted context only), table",
     ),
-    store_backend: str = typer.Option("faiss", "--store-backend", help="faiss or numpy"),
+    store_backend: str = typer.Option("numpy", "--store-backend", help="numpy or faiss"),
 ) -> None:
     """Retrieve chunks with lineage (no synthetic answer). For piping into your own LLM."""
     import json
@@ -186,7 +191,7 @@ def retrieve_chunks(
             "hits": [h.model_dump(mode="json") for h in hits],
             "formatted_context": RagLineage.format_context_for_llm(hits),
         }
-        console.print(json.dumps(out, indent=2))
+        typer.echo(json.dumps(out, indent=2))
         return
 
     table = Table(title="Retrieval hits")
@@ -205,7 +210,7 @@ def serve(
     source: str = typer.Option(..., "--source", "-s", help="Source directory with built dataset"),
     host: str = typer.Option("127.0.0.1", "--host", help="Bind host"),
     port: int = typer.Option(8765, "--port", help="Bind port"),
-    store_backend: str = typer.Option("faiss", "--store-backend", help="faiss or numpy"),
+    store_backend: str = typer.Option("numpy", "--store-backend", help="numpy or faiss"),
 ) -> None:
     """Run HTTP API (FastAPI): GET /health, /stats; POST /query, /retrieve. Requires: pip install raglineage[serve]"""
     try:
@@ -224,7 +229,7 @@ def serve(
 @app.command()
 def validate(
     source: str = typer.Option(..., "--source", "-s", help="Source directory"),
-    store_backend: str = typer.Option("faiss", "--store-backend", help="faiss or numpy"),
+    store_backend: str = typer.Option("numpy", "--store-backend", help="numpy or faiss"),
 ) -> None:
     """Validate dataset: check build status and exit 0 if OK, 1 otherwise (for CI)."""
     rag = RagLineage(source=source, store_backend=store_backend)
@@ -241,7 +246,7 @@ def validate(
 @app.command()
 def stats(
     source: str = typer.Option(..., "--source", "-s", help="Source directory"),
-    store_backend: str = typer.Option("faiss", "--store-backend", help="faiss or numpy"),
+    store_backend: str = typer.Option("numpy", "--store-backend", help="numpy or faiss"),
 ) -> None:
     """Show dataset statistics (node count, versions, build status)."""
     rag = RagLineage(source=source, store_backend=store_backend)

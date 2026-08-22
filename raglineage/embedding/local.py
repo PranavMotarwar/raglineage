@@ -7,8 +7,6 @@ import re
 from typing import Optional
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
-
 from raglineage.embedding.base import BaseEmbedder
 from raglineage.utils.logging import get_logger
 
@@ -32,15 +30,23 @@ class LocalEmbedder(BaseEmbedder):
         self._fallback_dim = 384
 
         logger.info(f"Loading embedding model: {model_name}")
+        if model_name == "hash":
+            self.model = None
+            self._fallback = True
+            return
         try:
-            self.model: SentenceTransformer | None = SentenceTransformer(model_name)
+            from sentence_transformers import SentenceTransformer
+
+            self.model = SentenceTransformer(model_name)
         except Exception as e:
             # Useful in offline / restricted environments (and makes tests resilient).
             self.model = None
             self._fallback = True
             logger.warning(
                 f"Failed to load sentence-transformers model '{model_name}'. "
-                f"Falling back to deterministic hash embeddings. Error: {e}"
+                "Falling back to deterministic lexical hash embeddings. "
+                "Install raglineage[local] for semantic embeddings. "
+                f"Error: {e}"
             )
 
     def embed(self, text: str) -> np.ndarray:
@@ -77,6 +83,16 @@ class LocalEmbedder(BaseEmbedder):
         # lightweight fallback, but provides useful lexical retrieval offline.
         v = np.zeros(self._fallback_dim, dtype=np.float32)
         tokens = re.findall(r"[\w'-]+", text.casefold())
+        # Preserve compound identifiers while also indexing their components:
+        # a query for "US" should match values such as "us-west".
+        compound_parts = [
+            part
+            for token in tokens
+            if "-" in token or "'" in token
+            for part in re.split(r"[-']+", token)
+            if part
+        ]
+        tokens.extend(compound_parts)
         for token in tokens:
             digest = hashlib.sha256(token.encode("utf-8")).digest()
             index = int.from_bytes(digest[:4], "little") % self._fallback_dim

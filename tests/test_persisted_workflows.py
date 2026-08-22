@@ -14,10 +14,8 @@ from raglineage.serve.app import create_app
 
 
 def force_offline_embedder(monkeypatch) -> None:
-    def unavailable(*args, **kwargs):
-        raise OSError("offline test")
-
-    monkeypatch.setattr(local, "SentenceTransformer", unavailable)
+    # Hash embeddings are the safe, dependency-free default.
+    assert local.LocalEmbedder("hash").model is None
 
 
 def test_numpy_build_can_be_loaded_and_queried(tmp_path: Path, monkeypatch) -> None:

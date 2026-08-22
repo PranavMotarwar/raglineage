@@ -2,8 +2,8 @@
 # Use: rag = RagLineage.from_config("raglineage.yaml")
 
 source: ./data
-store_backend: faiss
-embed_backend: local
+store_backend: numpy
+embed_backend: hash
 embed_model: sentence-transformers/all-MiniLM-L6-v2
 chunk_size: 1000
 chunk_overlap: 200

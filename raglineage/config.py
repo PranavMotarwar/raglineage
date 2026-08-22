@@ -11,8 +11,8 @@ class RagLineageConfig:
     """Configuration for RagLineage."""
 
     source: Union[Path, str]
-    store_backend: Literal["faiss", "numpy", "bruteforce"] = "faiss"
-    embed_backend: Literal["local", "openai"] = "local"
+    store_backend: Literal["faiss", "numpy", "bruteforce"] = "numpy"
+    embed_backend: Literal["hash", "local", "openai"] = "hash"
     embed_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     chunk_size: int = 1000
     chunk_overlap: int = 200

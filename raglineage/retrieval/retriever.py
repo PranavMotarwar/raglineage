@@ -57,30 +57,31 @@ class Retriever:
         Returns:
             List of (ln_id, score) tuples
         """
+        if not query.strip():
+            raise ValueError("query must not be empty")
+        if k <= 0:
+            raise ValueError("k must be greater than zero")
+
         # Embed query
         query_embedding = self.embedder.embed(query)
 
         # Vector search
         results = self.store.search(query_embedding, k=k * 2)  # Get more for filtering
 
-        # Apply filters
-        if filters:
-            results = apply_filters(results, self.node_registry, filters)
-
-        # Take top k
-        results = results[:k]
-
         # Graph expansion
         if graph_depth > 0:
-            expanded_results = set(results)
+            expanded_results = dict(results)
             for ln_id, _ in results:
                 neighbors = self.graph.neighbors(ln_id, depth=graph_depth)
                 for neighbor_id in neighbors:
                     if neighbor_id in self.node_registry:
-                        # Use same score as original (or could compute similarity)
-                        expanded_results.add((neighbor_id, 0.8))  # Lower score for neighbors
+                        expanded_results.setdefault(neighbor_id, 0.8)
 
-            results = list(expanded_results)[:k]
+            results = list(expanded_results.items())
+
+        # Apply filters after graph expansion so neighbors cannot bypass them.
+        if filters:
+            results = apply_filters(results, self.node_registry, filters)
 
         # Sort by score descending
         results.sort(key=lambda x: x[1], reverse=True)

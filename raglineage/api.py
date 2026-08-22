@@ -1,6 +1,7 @@
 """High-level API for RagLineage."""
 
 import fnmatch
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -17,6 +18,7 @@ from raglineage.lineage.versioning import VersionStore
 from raglineage.retrieval.filters import FilterConfig
 from raglineage.retrieval.retriever import Retriever
 from raglineage.schemas.audit import AnswerWithLineage, LineageEntry, RetrievalHit
+from raglineage.schemas.dataset import DatasetVersion
 from raglineage.schemas.stats import RagLineageStats
 from raglineage.schemas.lineage_node import LineageNode
 from raglineage.store.base import BaseVectorStore
@@ -41,8 +43,8 @@ class RagLineage:
     def __init__(
         self,
         source: Path | str,
-        store_backend: str = "faiss",
-        embed_backend: str = "local",
+        store_backend: str = "numpy",
+        embed_backend: str = "hash",
         embed_model: str = "sentence-transformers/all-MiniLM-L6-v2",
         chunk_size: int = 1000,
         chunk_overlap: int = 200,
@@ -58,7 +60,7 @@ class RagLineage:
         Args:
             source: Source directory or file path
             store_backend: Vector store backend ("faiss")
-            embed_backend: Embedding backend ("local" or "openai")
+            embed_backend: Embedding backend ("hash", "local", or "openai")
             embed_model: Embedding model name
             chunk_size: Chunk size for text splitting
             chunk_overlap: Overlap between chunks
@@ -69,6 +71,21 @@ class RagLineage:
             graph_depth: Graph walk depth for retrieval
         """
         self.source = Path(source)
+        if not self.source.exists():
+            raise FileNotFoundError(f"Source does not exist: {self.source}")
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be greater than zero")
+        if chunk_overlap < 0:
+            raise ValueError("chunk_overlap must be non-negative")
+        if chunk_overlap >= chunk_size:
+            adjusted_overlap = max(0, chunk_size // 5)
+            logger.warning(
+                f"chunk_overlap ({chunk_overlap}) must be smaller than chunk_size "
+                f"({chunk_size}); using {adjusted_overlap}"
+            )
+            chunk_overlap = adjusted_overlap
+        if graph_depth < 0:
+            raise ValueError("graph_depth must be non-negative")
         self.config = RagLineageConfig(
             source=source,
             store_backend=store_backend,
@@ -83,8 +100,18 @@ class RagLineage:
             graph_depth=graph_depth,
         )
 
+        # Keep state beside a single-file source, or inside a directory source.
+        self.dataset_root = self.source if self.source.is_dir() else self.source.parent
+        self.storage_dir = (
+            self.source / ".raglineage"
+            if self.source.is_dir()
+            else self.source.parent / f".{self.source.name}.raglineage"
+        )
+
         # Initialize components
-        self.version_store = VersionStore(self.source)
+        self.version_store = VersionStore(
+            self.dataset_root, manifest_path=self.storage_dir / "manifest.json"
+        )
         self.graph = LineageGraph()
         self.node_registry: dict[str, LineageNode] = {}
         self.embedder: BaseEmbedder | None = None
@@ -92,8 +119,6 @@ class RagLineage:
         self.retriever: Retriever | None = None
         self.auditor: Auditor | None = None
 
-        # Storage paths
-        self.storage_dir = self.source / ".raglineage"
         ensure_dir(self.storage_dir)
 
     def _store_path(self) -> Path:
@@ -141,8 +166,8 @@ class RagLineage:
             source = str(path.parent / source)
         kwargs = {
             "source": source,
-            "store_backend": data.get("store_backend", "faiss"),
-            "embed_backend": data.get("embed_backend", "local"),
+            "store_backend": data.get("store_backend", "numpy"),
+            "embed_backend": data.get("embed_backend", "hash"),
             "embed_model": data.get(
                 "embed_model", "sentence-transformers/all-MiniLM-L6-v2"
             ),
@@ -161,18 +186,23 @@ class RagLineage:
         if self.embedder is not None:
             return self.embedder
 
-        if self.config.embed_backend == "local":
+        if self.config.embed_backend == "hash":
+            self.embedder = LocalEmbedder("hash")
+        elif self.config.embed_backend == "local":
             self.embedder = LocalEmbedder(self.config.embed_model)
         elif self.config.embed_backend == "openai":
             if OpenAIEmbedder is None:
                 raise ImportError("OpenAI embedder not available. Install with: pip install raglineage[openai]")
             self.embedder = OpenAIEmbedder(self.config.embed_model)
         else:
-            raise ValueError(f"Unknown embed backend: {self.config.embed_backend}")
+            raise ValueError(
+                f"Unknown embed backend: {self.config.embed_backend}. "
+                "Expected hash, local, or openai."
+            )
 
         return self.embedder
 
-    def _initialize_store(self) -> BaseVectorStore:
+    def _initialize_store(self, load_existing: bool = True) -> BaseVectorStore:
         """Initialize vector store."""
         if self.store is not None:
             return self.store
@@ -183,15 +213,20 @@ class RagLineage:
         if self.config.store_backend == "faiss":
             store_path = self._store_path()
             # Import lazily so raglineage can work without FAISS installed.
-            from raglineage.store.faiss_store import FAISSStore
+            try:
+                from raglineage.store.faiss_store import FAISSStore
+            except ImportError as exc:
+                raise ImportError(
+                    "FAISS backend requires: pip install 'raglineage[faiss]'"
+                ) from exc
 
             self.store = FAISSStore(dimension)
-            if store_path.exists():
+            if load_existing and store_path.exists():
                 self.store.load(str(store_path))
         elif self.config.store_backend in ("numpy", "bruteforce"):
             store_path = self._store_path()
             self.store = NumpyStore(dimension)
-            if store_path.with_suffix(".npy").exists():
+            if load_existing and store_path.with_suffix(".npy").exists():
                 self.store.load(str(store_path))
         else:
             raise ValueError(f"Unknown store backend: {self.config.store_backend}")
@@ -215,6 +250,7 @@ class RagLineage:
         self,
         version: str = "v1.0",
         exclude: Optional[list[str]] = None,
+        _allow_empty: bool = False,
     ) -> None:
         """
         Build RAG database from source.
@@ -225,9 +261,17 @@ class RagLineage:
         """
         logger.info(f"Building RAG database version {version} from {self.source}")
 
+        # A build is a clean snapshot. Never merge with vectors left by an
+        # earlier build, which can otherwise surface stale or unregistered IDs.
+        self.graph = LineageGraph()
+        self.node_registry = {}
+        self.store = None
+        self.retriever = None
+        self.auditor = None
+
         # Initialize components
         embedder = self._initialize_embedder()
-        store = self._initialize_store()
+        store = self._initialize_store(load_existing=False)
 
         # Collect source files
         source_files = self._collect_source_files()
@@ -236,7 +280,7 @@ class RagLineage:
         if exclude:
             filtered = []
             for f in source_files:
-                rel = str(f.relative_to(self.source)).replace("\\", "/")
+                rel = str(f.relative_to(self.dataset_root)).replace("\\", "/")
                 skip = False
                 for p in exclude:
                     p_ = p.rstrip("/")
@@ -247,9 +291,19 @@ class RagLineage:
                     filtered.append(f)
             source_files = filtered
 
+        ingestor = AutoIngestor(dataset_version=version)
+        source_files = [path for path in source_files if ingestor.can_ingest(path)]
+        if not source_files and not _allow_empty:
+            raise ValueError(
+                "No ingestible content found. Supported formats: .txt, .text, "
+                ".md, .markdown, .rst, .csv, and .json"
+            )
+
         # Create version
-        relative_files = [f.relative_to(self.source) for f in source_files]
-        self.version_store.create_version(version, relative_files)
+        relative_files = [f.relative_to(self.dataset_root) for f in source_files]
+        self.version_store.create_version(
+            version, relative_files, metadata={"exclude": exclude or []}
+        )
 
         # Initialize transforms
         if self.config.chunking_strategy == "semantic":
@@ -265,7 +319,6 @@ class RagLineage:
         )
 
         # Ingest and transform
-        ingestor = AutoIngestor(dataset_version=version)
         all_nodes: list[LineageNode] = []
 
         for source_file in source_files:
@@ -283,9 +336,14 @@ class RagLineage:
 
                 all_nodes.extend(current_nodes)
 
+        if not all_nodes and not _allow_empty:
+            raise ValueError("Source files contained no ingestible, non-empty records")
+
         # Add to graph and store
         logger.info(f"Adding {len(all_nodes)} nodes to graph and store")
-        embeddings_batch = embedder.embed_batch([node.content for node in all_nodes])
+        embeddings_batch = (
+            embedder.embed_batch([node.content for node in all_nodes]) if all_nodes else []
+        )
 
         for node, embedding in zip(all_nodes, embeddings_batch):
             self.node_registry[node.ln_id] = node
@@ -306,13 +364,22 @@ class RagLineage:
         self._save_graph()
         logger.info(f"Build complete: {len(all_nodes)} nodes, version {version}")
 
-    def update(self, version: str, changed_only: bool = True) -> None:
+    def update(
+        self,
+        version: str,
+        changed_only: bool = True,
+        exclude: list[str] | None = None,
+    ) -> None:
         """
-        Update RAG database incrementally.
+        Update to a new, internally consistent dataset snapshot.
 
         Args:
             version: New version tag
-            changed_only: Only process changed files
+            changed_only: Retained for API compatibility. Change detection is
+                reported, while the index is rebuilt to guarantee a complete
+                single-version snapshot.
+            exclude: Exclude patterns. When omitted, reuse the previous
+                version's build exclusions.
         """
         current_version = self.version_store.get_current_version()
         if current_version is None:
@@ -320,97 +387,35 @@ class RagLineage:
             self.build(version)
             return
 
-        # Load current state
-        self._load_graph()
-        store = self._initialize_store()
-
-        # Compute diff
         version_from = self.version_store.get_version(current_version)
         if version_from is None:
             logger.warning("Current version not found, doing full build")
             self.build(version)
             return
 
-        # Create new version (will detect changed files)
-        source_files = self._collect_source_files()
-
-        relative_files = [f.relative_to(self.source) for f in source_files]
-        version_to = self.version_store.create_version(version, relative_files)
-
-        if changed_only:
-            diff = compute_diff(version_from, version_to)
-            changed_files = diff.get_changed_files()
-            logger.info(f"Changed files: {len(changed_files)}")
-        else:
-            changed_files = [f.path for f in version_to.files]
-            logger.info(f"Processing all files: {len(changed_files)}")
-
-        # Retire chunks belonging to changed or removed source files before
-        # indexing replacements. FAISS keeps tombstoned vectors internally,
-        # but removing their mapping prevents stale retrieval results.
-        changed_set = {str(path) for path in changed_files}
-        for ln_id, node in list(self.node_registry.items()):
-            source_uri = getattr(node.source, "uri", "")
-            try:
-                relative_uri = str(Path(source_uri).relative_to(self.source))
-            except (ValueError, TypeError):
-                relative_uri = str(source_uri)
-            if relative_uri in changed_set:
-                store.remove(ln_id)
-                self.graph.graph.remove_node(ln_id)
-                self.node_registry.pop(ln_id, None)
-
-        # Process changed files (simplified - in production would remove old nodes)
-        # For now, rebuild changed files
-        embedder = self._initialize_embedder()
-
-        # Initialize transforms
-        if self.config.chunking_strategy == "semantic":
-            chunker = SemanticChunkerTransform(self.config.chunk_size, self.config.chunk_overlap)
-        else:
-            chunker = SimpleChunkerTransform(self.config.chunk_size, self.config.chunk_overlap)
-
-        dedupe = DedupeTransform() if self.config.enable_dedupe else None
-        normalize = (
-            NormalizeTransform(aggressive=self.config.normalize_aggressive)
-            if self.config.enable_normalize
-            else None
+        effective_exclude = (
+            exclude if exclude is not None else list(version_from.metadata.get("exclude", []))
         )
-
-        ingestor = AutoIngestor(dataset_version=version)
-        new_nodes: list[LineageNode] = []
-
-        for file_path_str in changed_files:
-            file_path = self.source / file_path_str
-            if not file_path.exists():
-                continue
-
-            logger.info(f"Processing: {file_path}")
-            for ln in ingestor.ingest(file_path):
-                current_nodes = [ln]
-                for transform in [chunker, normalize, dedupe]:
-                    if transform is None:
-                        continue
-                    new_nodes_list = []
-                    for node in current_nodes:
-                        new_nodes_list.extend(transform.transform(node))
-                    current_nodes = new_nodes_list
-
-                new_nodes.extend(current_nodes)
-
-        # Add new nodes
-        if new_nodes:
-            embeddings_batch = embedder.embed_batch([node.content for node in new_nodes])
-            for node, embedding in zip(new_nodes, embeddings_batch):
-                self.node_registry[node.ln_id] = node
-                self.graph.add_node(node)
-                store.add(node.ln_id, embedding)
-
-        if changed_files:
-            store.save(str(self._store_path()))
-            self._save_graph()
-
-        logger.info(f"Update complete: added {len(new_nodes)} nodes, version {version}")
+        current_files = [
+            path.relative_to(self.dataset_root)
+            for path in self._collect_source_files()
+            if AutoIngestor(version).can_ingest(path)
+            and not any(
+                fnmatch.fnmatch(
+                    str(path.relative_to(self.dataset_root)).replace("\\", "/"), pattern
+                )
+                for pattern in effective_exclude
+            )
+        ]
+        preview = DatasetVersion(
+            version=version,
+            created_at=datetime.now(timezone.utc),
+            files=self.version_store.build_file_entries(current_files),
+        )
+        changes = compute_diff(version_from, preview)
+        logger.info(f"Changed files: {len(changes.get_changed_files())}")
+        self.build(version, exclude=effective_exclude, _allow_empty=True)
+        logger.info(f"Update complete: version {version}")
 
     def query(
         self, question: str, k: int = 5, filters: FilterConfig | None = None

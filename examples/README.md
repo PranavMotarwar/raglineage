@@ -44,6 +44,6 @@ raglineage tracks the complete lineage of every chunk in your RAG system. When y
 This makes it possible to:
 - Audit answers for quality and consistency
 - Track changes between dataset versions
-- Update incrementally (only reprocess what changed)
+- Create complete, versioned snapshots after source changes
 - Understand why answers changed when data updates
 - Maintain compliance trails

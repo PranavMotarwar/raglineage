@@ -1,7 +1,7 @@
 from typing import Union
 """File-based ingestion (text files, markdown, etc.)."""
 
-import uuid
+import hashlib
 from datetime import datetime
 from pathlib import Path
 from typing import Iterator
@@ -45,8 +45,9 @@ class FileIngestor(BaseIngestor):
                 return
 
             # Create a single Lineage Node for the file
-            ln_id = f"ln_{uuid.uuid4().hex[:8]}"
             content_hash = compute_content_hash(content)
+            identity = f"{source.resolve()}:{content_hash}".encode()
+            ln_id = f"ln_{hashlib.sha256(identity).hexdigest()[:16]}"
 
             yield LineageNode(
                 ln_id=ln_id,

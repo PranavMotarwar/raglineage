@@ -61,7 +61,7 @@ The system maintains a **Lineage Graph (DAG)** linking nodes through structural 
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
 │              Embedding + Vector Store                        │
-│  Embeddings → FAISS Store → LN ID Mapping                   │
+│  Embeddings → Vector Store → LN ID Mapping                  │
 └──────────────────────┬──────────────────────────────────────┘
                        │
                        ▼
@@ -132,6 +132,11 @@ Every answer includes full lineage and audit metadata:
 
 ```bash
 pip install raglineage
+
+# Optional semantic embeddings and/or FAISS acceleration
+pip install "raglineage[local]"
+pip install "raglineage[faiss]"
+pip install "raglineage[local,faiss]"
 ```
 
 ### Basic Usage
@@ -141,8 +146,8 @@ from raglineage import RagLineage
 
 rag = RagLineage(
     source="examples/data",
-    store_backend="faiss",
-    embed_backend="local"
+    store_backend="numpy",  # dependency-light default
+    embed_backend="hash"    # deterministic offline lexical retrieval
 )
 
 # Build initial version (optionally exclude files: *.log, .git, etc.)
@@ -191,15 +196,15 @@ raglineage init ./my_project
 raglineage build --source ./data --version v1.0
 raglineage build --source ./data -e "*.log" -e ".git" -e "__pycache__"
 
-# Use pure-Python store (no FAISS) if needed
+# NumPy is the default; FAISS is optional
 raglineage build --source ./data --store-backend numpy
 
-# Update incrementally
+# Create a new complete snapshot after source changes
 raglineage update --source ./data --version v1.1 --changed-only
 
 # Query (table or JSON output)
-raglineage query "What is the refund policy?" --k 5
-raglineage query "What is the refund policy?" --output json  # For piping, CI/CD
+raglineage query "What is the refund policy?" --source ./data --k 5
+raglineage query "What is the refund policy?" --source ./data --output json
 
 # Show dataset statistics
 raglineage stats --source ./data
@@ -222,7 +227,8 @@ synthesized answers, call `retrieve()` and pass
 
 ### FAISS install issues / segfaults
 
-If FAISS is hard to install on your platform (or you see crashes), use the **pure-Python** store:
+The dependency-light default is the NumPy store. To opt into FAISS, install
+`raglineage[faiss]` and select `store_backend="faiss"`.
 
 ```python
 rag = RagLineage(source="./data", store_backend="numpy")
@@ -237,7 +243,10 @@ raglineage build --source ./data --store-backend numpy
 
 ### Offline / restricted environments (no model downloads)
 
-If the `sentence-transformers` model can’t be downloaded/loaded, `embed_backend="local"` will fall back to a deterministic **hash embedding** so builds and tests still work. (Retrieval quality will be lower, but it’s useful for demos/CI.)
+The default `embed_backend="hash"` is deterministic, offline, and lexical. For
+semantic retrieval, install `raglineage[local]` and select
+`embed_backend="local"`. If that model cannot load, raglineage falls back to
+the lexical backend with a warning.
 
 ### Build only what you want
 
@@ -295,7 +304,7 @@ Enables graph-walk retrieval and relationship exploration.
 Each dataset build produces a versioned manifest:
 - Tracks all source files and their hashes
 - Enables diffing between versions
-- Supports incremental updates (only recompute changed files)
+- Creates complete, internally consistent versioned snapshots after updates
 
 ### Answer Auditing
 
@@ -323,15 +332,17 @@ Every answer includes:
 - **Transform Chain Tracking**: Every transform is recorded in the lineage
 
 ### 3. Embedding Backends
-- **Local Embeddings**: sentence-transformers (default: all-MiniLM-L6-v2)
+- **Hash Embeddings**: dependency-free lexical retrieval (default)
+- **Local Embeddings**: optional sentence-transformers (`raglineage[local]`)
 - **OpenAI Embeddings**: Optional OpenAI API integration
 - **Extensible**: Easy to add custom embedding backends
 
 ### 4. Vector Storage
-- **FAISS Store**: Efficient similarity search with L2 distance
+- **NumPy Store**: portable cosine search (default)
+- **FAISS Store**: optional accelerated search (`raglineage[faiss]`)
 - **LN ID Mapping**: Bidirectional mapping between vector indices and Lineage Node IDs
 - **Persistence**: Stores index and mappings to disk
-- **Incremental Updates**: Add/update vectors without full rebuild
+- **Versioned Updates**: rebuild a complete current snapshot for consistency
 
 ### 5. Retrieval
 - **Top-K Retrieval**: Standard vector similarity search
@@ -395,7 +406,7 @@ Every answer includes:
 - Strict type hints throughout
 - Pydantic models for schemas
 - NetworkX for graph operations
-- FAISS for vector storage
+- NumPy by default, with optional FAISS acceleration
 - Sentence-transformers for local embeddings
 
 ## Development

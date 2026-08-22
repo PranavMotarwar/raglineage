@@ -34,8 +34,8 @@ def main():
     
     rag = RagLineage(
         source=str(source_dir),
-        store_backend="faiss",
-        embed_backend="local",
+        store_backend="numpy",
+        embed_backend="hash",
         chunk_size=300,
         chunk_overlap=50,
         chunking_strategy="semantic",
@@ -45,7 +45,7 @@ def main():
         graph_depth=1,
     )
     
-    print("Using FAISS for vector storage and local embeddings")
+    print("Using NumPy vector storage and offline lexical embeddings")
     
     # Build the database
     print("\n" + "=" * 70)
@@ -108,7 +108,7 @@ def main():
     
     # Update when files change
     print("\n" + "=" * 70)
-    print("Updating incrementally (v1.1)")
+    print("Creating updated snapshot (v1.1)")
     print("=" * 70)
     
     print("\nUpdating database (only processing changed files)...")

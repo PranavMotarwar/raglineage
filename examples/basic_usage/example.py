@@ -23,8 +23,8 @@ def main():
     print("Initializing raglineage...")
     rag = RagLineage(
         source=str(source_dir),
-        store_backend="faiss",
-        embed_backend="local",
+        store_backend="numpy",
+        embed_backend="hash",
         chunk_size=200,  # Smaller chunks for demo
         chunk_overlap=50,
     )

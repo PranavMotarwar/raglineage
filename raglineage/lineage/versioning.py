@@ -18,7 +18,9 @@ MANIFEST_FILE = "manifest.json"
 class VersionStore:
     """Manages dataset versions and manifests."""
 
-    def __init__(self, root_path: Path | str) -> None:
+    def __init__(
+        self, root_path: Path | str, manifest_path: Path | str | None = None
+    ) -> None:
         """
         Initialize version store.
 
@@ -26,7 +28,11 @@ class VersionStore:
             root_path: Root directory of the dataset
         """
         self.root_path = Path(root_path)
-        self.manifest_path = self.root_path / MANIFEST_DIR / MANIFEST_FILE
+        self.manifest_path = (
+            Path(manifest_path)
+            if manifest_path is not None
+            else self.root_path / MANIFEST_DIR / MANIFEST_FILE
+        )
         self._manifest: DatasetManifest | None = None
 
     def load_manifest(self) -> DatasetManifest | None:
@@ -105,7 +111,24 @@ class VersionStore:
         Returns:
             New dataset version
         """
-        file_entries = []
+        file_entries = self.build_file_entries(files)
+
+        version_obj = DatasetVersion(
+            version=version,
+            created_at=datetime.now(timezone.utc),
+            files=file_entries,
+            metadata=metadata or {},
+        )
+
+        manifest = self.get_or_create_manifest(self.root_path.name)
+        manifest.add_version(version_obj)
+        self.save_manifest(manifest)
+
+        return version_obj
+
+    def build_file_entries(self, files: list[Path]) -> list[FileEntry]:
+        """Build file metadata without mutating the manifest."""
+        file_entries: list[FileEntry] = []
         for file_path in files:
             full_path = self.root_path / file_path
             if full_path.exists():
@@ -120,18 +143,7 @@ class VersionStore:
                     )
                 )
 
-        version_obj = DatasetVersion(
-            version=version,
-            created_at=datetime.now(timezone.utc),
-            files=file_entries,
-            metadata=metadata or {},
-        )
-
-        manifest = self.get_or_create_manifest(self.root_path.name)
-        manifest.add_version(version_obj)
-        self.save_manifest(manifest)
-
-        return version_obj
+        return file_entries
 
     def get_version(self, version: str) -> DatasetVersion | None:
         """

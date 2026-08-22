@@ -8,7 +8,7 @@ This example shows how to use raglineage in practice. It walks through the main 
 - Building a versioned database
 - Querying and getting results with full lineage
 - Checking answer quality with auditing
-- Updating incrementally when files change
+- Creating a new complete snapshot when files change
 - Comparing versions to see what changed
 - Filtering results by version or other criteria
 - Exploring relationships in the graph

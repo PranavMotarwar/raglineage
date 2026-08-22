@@ -61,6 +61,7 @@ class DatasetManifest(BaseModel):
 
     def add_version(self, version: DatasetVersion) -> None:
         """Add a new version to the manifest."""
+        self.versions = [existing for existing in self.versions if existing.version != version.version]
         self.versions.append(version)
         self.current_version = version.version
         self.updated_at = utc_now()

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
@@ -71,18 +71,9 @@ class LineageNode(BaseModel):
         ..., description="SHA-256 hash of content for integrity checking"
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Creation timestamp"
+        default_factory=lambda: datetime.now(timezone.utc), description="Creation timestamp"
     )
     updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
     metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )
-
-    def model_dump_json(self, **kwargs: Any) -> str:
-        """Override to ensure datetime serialization."""
-        return super().model_dump_json(**kwargs)
-
-    class Config:
-        """Pydantic configuration."""
-
-        json_encoders = {datetime: lambda v: v.isoformat() + "Z"}

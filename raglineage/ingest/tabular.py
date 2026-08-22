@@ -3,7 +3,7 @@ from typing import Union
 
 import csv
 import json
-import uuid
+import hashlib
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterator
@@ -31,7 +31,7 @@ class TabularIngestor(BaseIngestor):
     def can_ingest(self, source: Union[Path, str]) -> bool:
         """Check if source is a tabular file."""
         source = Path(source)
-        return source.is_file() and source.suffix.lower() in {".csv", ".json", ".parquet"}
+        return source.is_file() and source.suffix.lower() in {".csv", ".json"}
 
     def ingest(self, source: Union[Path, str]) -> Iterator[LineageNode]:
         """Ingest tabular file and yield Lineage Nodes (one per row)."""
@@ -55,8 +55,9 @@ class TabularIngestor(BaseIngestor):
             reader = csv.DictReader(f)
             for row_idx, row in enumerate(reader):
                 content = json.dumps(row, ensure_ascii=False)
-                ln_id = f"ln_{uuid.uuid4().hex[:8]}"
                 content_hash = compute_content_hash(content)
+                identity = f"{source.resolve()}:{row_idx}:{content_hash}".encode()
+                ln_id = f"ln_{hashlib.sha256(identity).hexdigest()[:16]}"
 
                 yield LineageNode(
                     ln_id=ln_id,
@@ -75,8 +76,9 @@ class TabularIngestor(BaseIngestor):
             if isinstance(data, list):
                 for row_idx, item in enumerate(data):
                     content = json.dumps(item, ensure_ascii=False)
-                    ln_id = f"ln_{uuid.uuid4().hex[:8]}"
                     content_hash = compute_content_hash(content)
+                    identity = f"{source.resolve()}:{row_idx}:{content_hash}".encode()
+                    ln_id = f"ln_{hashlib.sha256(identity).hexdigest()[:16]}"
 
                     yield LineageNode(
                         ln_id=ln_id,
@@ -90,8 +92,9 @@ class TabularIngestor(BaseIngestor):
             else:
                 # Single object
                 content = json.dumps(data, ensure_ascii=False)
-                ln_id = f"ln_{uuid.uuid4().hex[:8]}"
                 content_hash = compute_content_hash(content)
+                identity = f"{source.resolve()}:0:{content_hash}".encode()
+                ln_id = f"ln_{hashlib.sha256(identity).hexdigest()[:16]}"
 
                 yield LineageNode(
                     ln_id=ln_id,
