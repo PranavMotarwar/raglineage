@@ -1,6 +1,7 @@
 """CLI main entry point using typer."""
 
 from pathlib import Path
+from typing import Optional
 
 import typer
 from rich.console import Console
@@ -62,6 +63,8 @@ def build(
     source: str = typer.Option(..., "--source", "-s", help="Source directory or file"),
     version: str = typer.Option("v1.0", "--version", "-v", help="Dataset version"),
     store_backend: str = typer.Option("numpy", "--store-backend", help="Vector store backend: numpy or faiss"),
+    embed_backend: str = typer.Option("hash", "--embed-backend", help="hash, local, or openai"),
+    embed_model: Optional[str] = typer.Option(None, "--embed-model", help="Embedding model name"),
     chunk_size: int = typer.Option(1000, "--chunk-size", help="Chunk size"),
     chunk_overlap: int = typer.Option(200, "--chunk-overlap", help="Chunk overlap"),
     exclude: list[str] = typer.Option([], "--exclude", "-e", help="Exclude pattern (e.g. *.log, .git; repeatable)"),
@@ -71,6 +74,8 @@ def build(
     rag = RagLineage(
         source=source,
         store_backend=store_backend,
+        embed_backend=embed_backend,
+        embed_model=embed_model,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
     )
@@ -83,12 +88,19 @@ def update(
     source: str = typer.Option(..., "--source", "-s", help="Source directory or file"),
     version: str = typer.Option(..., "--version", "-v", help="New dataset version"),
     changed_only: bool = typer.Option(True, "--changed-only/--all", help="Only process changed files"),
-    store_backend: str = typer.Option("numpy", "--store-backend", help="numpy or faiss"),
+    store_backend: Optional[str] = typer.Option(None, "--store-backend", help="Override stored backend"),
+    embed_backend: Optional[str] = typer.Option(None, "--embed-backend", help="Override stored embedding backend"),
+    embed_model: Optional[str] = typer.Option(None, "--embed-model", help="Override stored model"),
     exclude: list[str] = typer.Option([], "--exclude", "-e", help="Override exclude patterns"),
 ) -> None:
     """Update RAG database incrementally."""
     console.print(f"[cyan]Updating RAG database: {source}")
-    rag = RagLineage(source=source, store_backend=store_backend)
+    rag = RagLineage(
+        source=source,
+        store_backend=store_backend,
+        embed_backend=embed_backend,
+        embed_model=embed_model,
+    )
     rag.update(
         version=version,
         changed_only=changed_only,
@@ -105,10 +117,17 @@ def query(
     version: str = typer.Option(None, "--version", help="Filter by dataset version"),
     min_score: float = typer.Option(0.0, "--min-score", help="Minimum similarity score (0–1)"),
     output: str = typer.Option("table", "--output", "-o", help="Output format: table or json"),
-    store_backend: str = typer.Option("numpy", "--store-backend", help="numpy or faiss"),
+    store_backend: Optional[str] = typer.Option(None, "--store-backend", help="Override stored backend"),
+    embed_backend: Optional[str] = typer.Option(None, "--embed-backend", help="Override stored embedding backend"),
+    embed_model: Optional[str] = typer.Option(None, "--embed-model", help="Override stored model"),
 ) -> None:
     """Query the RAG database."""
-    rag = RagLineage(source=source, store_backend=store_backend)
+    rag = RagLineage(
+        source=source,
+        store_backend=store_backend,
+        embed_backend=embed_backend,
+        embed_model=embed_model,
+    )
 
     filters = None
     if version is not None or min_score > 0:
@@ -171,12 +190,19 @@ def retrieve_chunks(
         "-o",
         help="Output: json (hits), llm (formatted context only), table",
     ),
-    store_backend: str = typer.Option("numpy", "--store-backend", help="numpy or faiss"),
+    store_backend: Optional[str] = typer.Option(None, "--store-backend", help="Override stored backend"),
+    embed_backend: Optional[str] = typer.Option(None, "--embed-backend", help="Override stored embedding backend"),
+    embed_model: Optional[str] = typer.Option(None, "--embed-model", help="Override stored model"),
 ) -> None:
     """Retrieve chunks with lineage (no synthetic answer). For piping into your own LLM."""
     import json
 
-    rag = RagLineage(source=source, store_backend=store_backend)
+    rag = RagLineage(
+        source=source,
+        store_backend=store_backend,
+        embed_backend=embed_backend,
+        embed_model=embed_model,
+    )
     filters = None
     if version is not None or min_score > 0:
         filters = FilterConfig(dataset_version=version, min_score=min_score)
@@ -210,7 +236,7 @@ def serve(
     source: str = typer.Option(..., "--source", "-s", help="Source directory with built dataset"),
     host: str = typer.Option("127.0.0.1", "--host", help="Bind host"),
     port: int = typer.Option(8765, "--port", help="Bind port"),
-    store_backend: str = typer.Option("numpy", "--store-backend", help="numpy or faiss"),
+    store_backend: Optional[str] = typer.Option(None, "--store-backend", help="Override stored backend"),
 ) -> None:
     """Run HTTP API (FastAPI): GET /health, /stats; POST /query, /retrieve. Requires: pip install raglineage[serve]"""
     try:
@@ -229,7 +255,7 @@ def serve(
 @app.command()
 def validate(
     source: str = typer.Option(..., "--source", "-s", help="Source directory"),
-    store_backend: str = typer.Option("numpy", "--store-backend", help="numpy or faiss"),
+    store_backend: Optional[str] = typer.Option(None, "--store-backend", help="Override stored backend"),
 ) -> None:
     """Validate dataset: check build status and exit 0 if OK, 1 otherwise (for CI)."""
     rag = RagLineage(source=source, store_backend=store_backend)
@@ -246,7 +272,7 @@ def validate(
 @app.command()
 def stats(
     source: str = typer.Option(..., "--source", "-s", help="Source directory"),
-    store_backend: str = typer.Option("numpy", "--store-backend", help="numpy or faiss"),
+    store_backend: Optional[str] = typer.Option(None, "--store-backend", help="Override stored backend"),
 ) -> None:
     """Show dataset statistics (node count, versions, build status)."""
     rag = RagLineage(source=source, store_backend=store_backend)

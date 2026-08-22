@@ -43,9 +43,9 @@ class RagLineage:
     def __init__(
         self,
         source: Path | str,
-        store_backend: str = "numpy",
-        embed_backend: str = "hash",
-        embed_model: str = "sentence-transformers/all-MiniLM-L6-v2",
+        store_backend: str | None = None,
+        embed_backend: str | None = None,
+        embed_model: str | None = None,
         chunk_size: int = 1000,
         chunk_overlap: int = 200,
         chunking_strategy: str = "semantic",
@@ -86,6 +86,22 @@ class RagLineage:
             chunk_overlap = adjusted_overlap
         if graph_depth < 0:
             raise ValueError("graph_depth must be non-negative")
+
+        # Keep state beside a single-file source, or inside a directory source.
+        self.dataset_root = self.source if self.source.is_dir() else self.source.parent
+        self.storage_dir = (
+            self.source / ".raglineage"
+            if self.source.is_dir()
+            else self.source.parent / f".{self.source.name}.raglineage"
+        )
+        index_config_path = self.storage_dir / "index_config.json"
+        persisted_config = load_json(index_config_path) if index_config_path.exists() else {}
+        store_backend = store_backend or persisted_config.get("store_backend", "numpy")
+        embed_backend = embed_backend or persisted_config.get("embed_backend", "hash")
+        embed_model = embed_model or persisted_config.get(
+            "embed_model", "sentence-transformers/all-MiniLM-L6-v2"
+        )
+
         self.config = RagLineageConfig(
             source=source,
             store_backend=store_backend,
@@ -98,14 +114,6 @@ class RagLineage:
             enable_normalize=enable_normalize,
             normalize_aggressive=normalize_aggressive,
             graph_depth=graph_depth,
-        )
-
-        # Keep state beside a single-file source, or inside a directory source.
-        self.dataset_root = self.source if self.source.is_dir() else self.source.parent
-        self.storage_dir = (
-            self.source / ".raglineage"
-            if self.source.is_dir()
-            else self.source.parent / f".{self.source.name}.raglineage"
         )
 
         # Initialize components
@@ -362,6 +370,15 @@ class RagLineage:
         # Save
         store.save(str(self._store_path()))
         self._save_graph()
+        save_json(
+            {
+                "store_backend": self.config.store_backend,
+                "embed_backend": self.config.embed_backend,
+                "embed_model": self.config.embed_model,
+                "dimension": embedder.dimension,
+            },
+            self.storage_dir / "index_config.json",
+        )
         logger.info(f"Build complete: {len(all_nodes)} nodes, version {version}")
 
     def update(

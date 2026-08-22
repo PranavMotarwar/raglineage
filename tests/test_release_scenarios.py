@@ -30,6 +30,8 @@ def test_mixed_formats_exclusions_and_deterministic_rebuild(tmp_path: Path) -> N
     first_count = rag.stats().node_count
 
     rebuilt = RagLineage(docs)
+    assert rebuilt.config.store_backend == "numpy"
+    assert rebuilt.config.embed_backend == "hash"
     rebuilt.build("v1.0", exclude=["private.md"])
     assert set(rebuilt.node_registry) == first_ids
     assert rebuilt.stats().node_count == first_count == 4

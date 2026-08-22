@@ -31,7 +31,7 @@ class RetrieveRequest(BaseModel):
 
 def create_app(
     source: str,
-    store_backend: str = "numpy",
+    store_backend: str | None = None,
     chunk_size: int = 1000,
     chunk_overlap: int = 200,
 ) -> FastAPI:

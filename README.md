@@ -199,6 +199,9 @@ raglineage build --source ./data -e "*.log" -e ".git" -e "__pycache__"
 # NumPy is the default; FAISS is optional
 raglineage build --source ./data --store-backend numpy
 
+# Optional semantic embeddings (backend/model choice is persisted for queries)
+raglineage build --source ./data --embed-backend local
+
 # Create a new complete snapshot after source changes
 raglineage update --source ./data --version v1.1 --changed-only
 
