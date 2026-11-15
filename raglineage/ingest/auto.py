@@ -1,11 +1,12 @@
-from typing import Union
 """Auto-detecting ingestor that routes to appropriate ingestor."""
 
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
+from typing import Union
 
 from raglineage.ingest.base import BaseIngestor
 from raglineage.ingest.files import FileIngestor
+from raglineage.ingest.pdf import PDFIngestor
 from raglineage.ingest.tabular import TabularIngestor
 from raglineage.schemas.lineage_node import LineageNode
 from raglineage.utils.logging import get_logger
@@ -25,6 +26,7 @@ class AutoIngestor(BaseIngestor):
         """
         self.dataset_version = dataset_version
         self.ingestors: list[BaseIngestor] = [
+            PDFIngestor(dataset_version),
             TabularIngestor(dataset_version),
             FileIngestor(dataset_version),
         ]

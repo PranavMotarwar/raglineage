@@ -304,14 +304,11 @@ class RagLineage:
         if not source_files and not _allow_empty:
             raise ValueError(
                 "No ingestible content found. Supported formats: .txt, .text, "
-                ".md, .markdown, .rst, .csv, and .json"
+                ".md, .markdown, .rst, .csv, .json, and .pdf (requires raglineage[pdf])"
             )
 
         # Create version
         relative_files = [f.relative_to(self.dataset_root) for f in source_files]
-        self.version_store.create_version(
-            version, relative_files, metadata={"exclude": exclude or []}
-        )
 
         # Initialize transforms
         if self.config.chunking_strategy == "semantic":
@@ -368,6 +365,9 @@ class RagLineage:
                         self.graph.add_edge(prev_chunk_id, node.ln_id, edge_type="adjacent")
 
         # Save
+        self.version_store.create_version(
+            version, relative_files, metadata={"exclude": exclude or []}
+        )
         store.save(str(self._store_path()))
         self._save_graph()
         save_json(

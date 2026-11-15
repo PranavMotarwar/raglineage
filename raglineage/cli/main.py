@@ -161,11 +161,14 @@ def query(
 
         for entry in answer.lineage:
             uri = getattr(entry.source, "uri", str(entry.source))
+            source_label = uri[:50] + "..." if len(uri) > 50 else uri
+            if entry.source.type == "pdf":
+                source_label += f", page {entry.source.page}"
             table.add_row(
                 entry.ln_id[:12] + "...",
                 f"{entry.score:.3f}",
                 entry.dataset_version,
-                uri[:50] + "..." if len(uri) > 50 else uri,
+                source_label,
             )
 
         console.print(table)
@@ -209,7 +212,7 @@ def retrieve_chunks(
     hits = rag.retrieve(question, k=k, filters=filters)
 
     if output == "llm":
-        console.print(RagLineage.format_context_for_llm(hits))
+        typer.echo(RagLineage.format_context_for_llm(hits))
         return
     if output == "json":
         out = {
@@ -227,7 +230,10 @@ def retrieve_chunks(
     table.add_column("Source", style="magenta")
     for h in hits:
         uri = getattr(h.source, "uri", str(h.source))
-        table.add_row(f"{h.score:.3f}", h.ln_id[:16] + "...", h.dataset_version, uri[:48])
+        source_label = uri[:48]
+        if h.source.type == "pdf":
+            source_label += f", page {h.source.page}"
+        table.add_row(f"{h.score:.3f}", h.ln_id[:16] + "...", h.dataset_version, source_label)
     console.print(table)
 
 
