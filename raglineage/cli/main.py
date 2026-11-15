@@ -212,7 +212,7 @@ def retrieve_chunks(
     hits = rag.retrieve(question, k=k, filters=filters)
 
     if output == "llm":
-        console.print(RagLineage.format_context_for_llm(hits))
+        typer.echo(RagLineage.format_context_for_llm(hits))
         return
     if output == "json":
         out = {

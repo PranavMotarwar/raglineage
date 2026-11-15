@@ -124,3 +124,21 @@ def test_http_api_reads_a_persisted_numpy_dataset(tmp_path: Path, monkeypatch) -
     assert response.status_code == 200
     assert response.json()["hits"][0]["dataset_version"] == "v1.0"
     assert "Fridays" in response.json()["formatted_context"]
+
+
+def test_cli_llm_output_preserves_literal_context(tmp_path: Path, monkeypatch) -> None:
+    from rich.console import Console
+
+    import raglineage.cli.main as cli
+
+    document = tmp_path / "policy.txt"
+    document.write_text("Support uses [bold]literal tags[/bold] and " + "long text " * 20)
+    rag = RagLineage(document)
+    rag.build("v1")
+    expected = rag.format_context_for_llm(rag.retrieve("Support", k=1))
+    monkeypatch.setattr(cli, "console", Console(width=30))
+    result = CliRunner().invoke(app, [
+        "retrieve", "Support", "--source", str(document), "--k", "1", "--output", "llm",
+    ])
+    assert result.exit_code == 0, result.output
+    assert result.output == expected + "\n"

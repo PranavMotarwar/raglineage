@@ -136,8 +136,11 @@ def test_mixed_directory_exclusions_and_cli(tmp_path):
             body = json.loads(result.output)
             entries = body["hits" if command == "retrieve" else "lineage"]
             assert entries[0]["source"]["page"] == 1
+        elif output == "llm":
+            expected = rag.format_context_for_llm(rag.retrieve("Refund", k=1))
+            assert result.output == expected + "\n"
         else:
-            assert "page 1" in result.output
+            assert "page 1" in " ".join(result.output.split())
 
 
 def test_partial_extraction_failure_does_not_publish(tmp_path, monkeypatch):
@@ -185,3 +188,37 @@ def test_empty_pdf_and_missing_extra_do_not_create_version(tmp_path, monkeypatch
     with pytest.raises(ImportError, match=r"raglineage\[pdf\]"):
         RagLineage(pdf).build("missing")
     assert RagLineage(pdf).stats().versions == []
+
+
+@pytest.mark.parametrize("backend", ["numpy", "faiss"])
+def test_pdf_http_round_trip_and_deleted_page_removal(tmp_path, backend):
+    if backend == "faiss":
+        pytest.importorskip("faiss")
+    from fastapi.testclient import TestClient
+
+    from raglineage.serve.app import create_app
+
+    pdf = write_pdf(tmp_path / "policy.pdf", [
+        "Refunds are allowed for thirty days.", "Warranty lasts two years.",
+    ])
+    (tmp_path / "notes.txt").write_text("Support is available on Mondays.")
+    RagLineage(tmp_path, store_backend=backend).build("v1")
+    with TestClient(create_app(str(tmp_path))) as client:
+        assert client.get("/health").status_code == 200
+        assert client.get("/stats").json()["node_count"] == 3
+        response = client.post("/query", json={"question": "warranty", "k": 1})
+        assert response.status_code == 200
+        assert response.json()["lineage"][0]["source"]["page"] == 2
+        assert response.json()["audit"]["version_consistency"] == "single_version"
+        response = client.post("/retrieve", json={
+            "question": "warranty", "k": 1, "format_llm": True,
+        })
+        assert response.status_code == 200
+        assert "page 2" in response.json()["formatted_context"]
+        assert client.post("/retrieve", json={"question": "warranty", "k": 0}).status_code == 422
+    pdf.unlink()
+    RagLineage(tmp_path).update("v2")
+    loaded = RagLineage(tmp_path)
+    hits = loaded.retrieve("Support", k=10)
+    assert len(hits) == 1 and hits[0].source.type == "file"
+    assert loaded.diff("v1", "v2").removed_files == ["policy.pdf"]
