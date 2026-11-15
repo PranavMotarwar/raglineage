@@ -45,6 +45,8 @@ class RetrievalHit(BaseModel):
                 text = text[:max_content_chars] + "..."
             if include_sources:
                 uri = getattr(h.source, "uri", str(h.source))
+                if h.source.type == "pdf":
+                    uri += f", page {h.source.page}"
                 parts.append(f"[{i}] (source: {uri})\n{text}")
             else:
                 parts.append(f"[{i}]\n{text}")
@@ -93,6 +95,8 @@ class AnswerWithLineage(BaseModel):
             for entry in self.lineage:
                 full_uri = getattr(entry.source, "uri", str(entry.source))
                 source_uri = full_uri[:60] + ("..." if len(full_uri) > 60 else "")
+                if entry.source.type == "pdf":
+                    source_uri += f", page {entry.source.page}"
                 lines.append(
                     f"| {entry.ln_id[:16]}... | {entry.score:.3f} | "
                     f"{entry.dataset_version} | {source_uri} |"

@@ -137,6 +137,9 @@ pip install raglineage
 pip install "raglineage[local]"
 pip install "raglineage[faiss]"
 pip install "raglineage[local,faiss]"
+
+# Optional text-based PDF ingestion
+pip install "raglineage[pdf]"
 ```
 
 ### Basic Usage
@@ -185,6 +188,47 @@ rag = RagLineage.from_config("raglineage.yaml")
 Check out the examples directory:
 - `examples/example/example.py` - Full walkthrough of all features
 - `examples/basic_usage/example.py` - Quick start example
+- `examples/basic_usage/pdf_example.py` - PDF ingestion and page citations
+
+### Query PDFs with page citations
+
+Install `pip install "raglineage[pdf]"`, then use a PDF file or a directory
+containing PDFs alongside text, CSV, and JSON files:
+
+```python
+from raglineage import RagLineage
+
+rag = RagLineage(source="handbook.pdf")
+rag.build(version="v1")
+answer = rag.query("What is the refund policy?", k=3)
+print(answer.to_markdown())  # Sources include the PDF path and page number
+for entry in answer.lineage:
+    print(entry.source.uri, entry.source.page)
+
+hits = rag.retrieve("What is the refund policy?", k=3)
+print(rag.format_context_for_llm(hits))  # e.g. (source: handbook.pdf, page 2)
+```
+
+```bash
+python examples/basic_usage/pdf_example.py handbook.pdf --question "What is the refund policy?"
+raglineage build --source handbook.pdf --version v1
+raglineage query "What is the refund policy?" --source handbook.pdf --output json
+```
+
+Each page is extracted and chunked separately. Citations use **1-based physical
+PDF page numbers**, which may differ from printed page labels. Page references
+survive saved-index reloads and appear in JSON, Markdown, CLI tables, and LLM
+context. The transform chain records `pdf_parse`.
+
+PDF support extracts existing text; it does not perform OCR or reconstruct
+tables and complex layouts. Pages without extractable text are skipped with a
+warning; scanned pages need OCR before ingestion. Encrypted or unreadable PDFs
+fail the build with an error identifying the file. Decrypt or repair the file,
+or exclude it with `exclude=["filename.pdf"]` / `--exclude filename.pdf`.
+A PDF-only build with no extractable text fails instead of creating an empty index.
+Missing PDF dependencies produce the installation command above. Text-only
+workflows do not require the PDF extra. Existing content deduplication still
+applies: identical chunks retain one source occurrence, not every occurrence.
 
 ### CLI Usage
 
@@ -323,8 +367,9 @@ Every answer includes:
 ### 1. Data Ingestion
 - **Auto-detection**: Automatically detects file types and routes to appropriate ingestor
 - **File Ingestion**: Text files (.txt, .md, .rst)
+- **PDF Ingestion**: Text-based PDFs with page citations (`raglineage[pdf]`)
 - **Tabular Ingestion**: CSV, JSON files (row-by-row processing)
-- **Extensible**: Easy to add custom ingestors for PDFs, APIs, databases
+- **Extensible**: Easy to add custom ingestors for APIs and databases
 
 ### 2. Transform Pipeline
 - **Chunking Strategies**:
